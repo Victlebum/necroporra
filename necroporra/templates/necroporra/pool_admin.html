@@ -1,0 +1,517 @@
+{% extends "necroporra/layout.html" %}
+{% load static %}
+
+{% block title %}Admin Panel – {{ pool.name }} - Necroporra{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+
+    {# Header #}
+    <div class="level mb-5">
+      <div class="level-left">
+        <div class="level-item">
+          <div>
+            <h1 class="title">
+              <span class="icon-text">
+                <span class="icon has-text-warning"><i class="fas fa-shield-halved"></i></span>
+                <span>Admin Panel</span>
+              </span>
+            </h1>
+            <p class="subtitle">
+              {{ pool.name }}
+              <span class="tag is-info is-medium ml-2">{{ pool.slug }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <a href="{% url 'pool_detail' slug=pool.slug %}" class="button">
+            <span class="icon"><i class="fas fa-arrow-left"></i></span>
+            <span>Back to Pool</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {# Pool Status Overview #}
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-3">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-circle-info"></i></span>
+          <span>Pool Status</span>
+        </span>
+      </h2>
+      <div class="columns is-multiline">
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Status</span>
+            {% if pool.is_pool_active %}
+              <span class="tag is-success">Active</span>
+            {% else %}
+              <span class="tag is-danger">Ended</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Visibility</span>
+            {% if pool.is_public %}
+              <span class="tag is-info">Public</span>
+            {% else %}
+              <span class="tag is-warning">Private</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Picks</span>
+            {% if pool.picks_visible %}
+              <span class="tag is-success">Visible</span>
+            {% else %}
+              <span class="tag is-warning">Hidden</span>
+            {% endif %}
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Scoring</span>
+            <span class="tag is-light">{{ pool.get_scoring_mode_display }}</span>
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Ends</span>
+            <span class="tag is-light">{{ pool.limit_date|date:"d M Y" }}</span>
+          </div>
+        </div>
+        <div class="column is-narrow">
+          <div class="tags has-addons">
+            <span class="tag is-dark">Members</span>
+            <span class="tag is-light">{{ memberships.count }}/20</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {# Members #}
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-users"></i></span>
+          <span>Members</span>
+        </span>
+      </h2>
+
+      {% if memberships %}
+      <div class="table-container">
+        <table class="table is-fullwidth is-hoverable is-striped">
+          <thead>
+            <tr>
+              <th>Username</th>
+              <th style="width:180px;">Joined</th>
+              <th style="width:100px;">Points</th>
+              <th style="width:100px;">Wins</th>
+              <th style="width:100px;">Role</th>
+              <th style="width:180px;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="members-tbody">
+            {% for membership in memberships %}
+            <tr id="row-{{ membership.user.id }}" data-username="{{ membership.user.username }}">
+              <td>
+                <strong>{{ membership.user.username }}</strong>
+                {% if membership.user == request.user %}
+                  <span class="tag is-info is-small ml-2">You</span>
+                {% endif %}
+              </td>
+              <td class="has-text-grey">{{ membership.joined_at|date:"d M Y" }}</td>
+              <td>{{ membership.total_points }}</td>
+              <td>{{ membership.wins }}</td>
+              <td id="role-{{ membership.user.id }}">
+                {% if membership.user == pool.admin %}
+                  <span class="tag is-warning">
+                    <span class="icon is-small"><i class="fas fa-crown"></i></span>
+                    <span>Admin</span>
+                  </span>
+                {% else %}
+                  <span class="tag is-light">Member</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if membership.user != request.user %}
+                <div class="buttons are-small">
+                  {% if membership.user != pool.admin %}
+                    <button class="button is-warning is-light"
+                            onclick="makeAdmin({{ membership.user.id }}, '{{ membership.user.username }}')"
+                            id="btn-admin-{{ membership.user.id }}"
+                            title="Transfer admin rights to {{ membership.user.username }}">
+                      <span class="icon"><i class="fas fa-crown"></i></span>
+                      <span>Make Admin</span>
+                    </button>
+                    <button class="button is-danger is-light"
+                            onclick="removeMember({{ membership.user.id }}, '{{ membership.user.username }}')"
+                            id="btn-remove-{{ membership.user.id }}"
+                            title="Remove {{ membership.user.username }} from the pool">
+                      <span class="icon"><i class="fas fa-user-minus"></i></span>
+                      <span>Remove</span>
+                    </button>
+                  {% else %}
+                    <span class="has-text-grey is-size-7">Current admin</span>
+                  {% endif %}
+                </div>
+                {% else %}
+                <span class="has-text-grey is-size-7">That's you</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="has-text-grey">No members found.</p>
+      {% endif %}
+    </div>
+
+    {# Celebrities #}
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-star"></i></span>
+          <span>Celebrities</span>
+        </span>
+      </h2>
+
+      {% if pool_celebrities %}
+      <div class="table-container">
+        <table class="table is-fullwidth is-hoverable is-striped">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th style="width:160px;">Wikidata death</th>
+              <th style="width:160px;">Manual death</th>
+              <th style="width:130px;">Status</th>
+              <th style="width:160px;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for pc in pool_celebrities %}
+            <tr id="celeb-row-{{ pc.celebrity.id }}">
+              <td><strong>{{ pc.celebrity.name }}</strong></td>
+              <td class="has-text-grey">
+                {% if pc.celebrity.death_date %}
+                  {{ pc.celebrity.death_date|date:"d M Y" }}
+                {% else %}
+                  <span class="has-text-grey-light">—</span>
+                {% endif %}
+              </td>
+              <td class="has-text-grey">
+                {% if pc.manual_death_date %}
+                  {{ pc.manual_death_date|date:"d M Y" }}
+                {% else %}
+                  <span class="has-text-grey-light">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if pc.celebrity.death_date %}
+                  <span class="tag is-danger">
+                    <span class="icon is-small"><i class="fas fa-skull"></i></span>
+                    <span>Dead (Wikidata)</span>
+                  </span>
+                {% elif pc.manual_death_date %}
+                  <span class="tag is-warning">
+                    <span class="icon is-small"><i class="fas fa-skull"></i></span>
+                    <span>Dead (Manual)</span>
+                  </span>
+                {% else %}
+                  <span class="tag is-success is-light">Alive</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if not pc.celebrity.death_date %}
+                  {% if pc.manual_death_date %}
+                    <button class="button is-light is-small"
+                            onclick="unmarkDead({{ pc.celebrity.id }}, '{{ pc.celebrity.name|escapejs }}')"
+                            id="btn-unmark-{{ pc.celebrity.id }}">
+                      <span class="icon"><i class="fas fa-rotate-left"></i></span>
+                      <span>Unmark Death</span>
+                    </button>
+                  {% else %}
+                    <button class="button is-danger is-light is-small"
+                            onclick="markDead({{ pc.celebrity.id }}, '{{ pc.celebrity.name|escapejs }}')"
+                            id="btn-mark-{{ pc.celebrity.id }}">
+                      <span class="icon"><i class="fas fa-skull"></i></span>
+                      <span>Mark as Dead</span>
+                    </button>
+                  {% endif %}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+        <p class="has-text-grey">No celebrities in this pool yet.</p>
+      {% endif %}
+    </div>
+
+    {# Danger Zone #}
+    <div class="box" style="border: 1px solid hsl(348, 100%, 61%);">
+      <h2 class="title is-5 has-text-danger mb-4">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-triangle-exclamation"></i></span>
+          <span>Danger Zone</span>
+        </span>
+      </h2>
+
+      <div class="columns is-multiline">
+
+        {# Reveal Picks #}
+        {% if not pool.picks_visible %}
+        <div class="column is-full">
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <div>
+                  <p class="has-text-weight-semibold">Reveal all picks now</p>
+                  <p class="is-size-7 has-text-grey">
+                    Makes everyone's predictions visible immediately and permanently. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button class="button is-warning" id="btn-reveal-picks" onclick="revealPicks()">
+                  <span class="icon"><i class="fas fa-eye"></i></span>
+                  <span>Reveal Picks</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <hr class="my-3">
+        </div>
+        {% endif %}
+
+        {# Delete Pool #}
+        <div class="column is-full">
+          <div class="level">
+            <div class="level-left">
+              <div class="level-item">
+                <div>
+                  <p class="has-text-weight-semibold has-text-danger">Delete this pool</p>
+                  <p class="is-size-7 has-text-grey">
+                    Permanently deletes the pool, all memberships, predictions, and related data. This cannot be undone.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="level-right">
+              <div class="level-item">
+                <button class="button is-danger" onclick="deletePool()">
+                  <span class="icon"><i class="fas fa-trash"></i></span>
+                  <span>Delete Pool</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+{# Confirmation Modal #}
+<div class="modal" id="confirm-modal">
+  <div class="modal-background" onclick="closeModal()"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title" id="modal-title">Confirm Action</p>
+      <button class="delete" aria-label="close" onclick="closeModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <p id="modal-body"></p>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button" id="modal-confirm-btn">Confirm</button>
+      <button class="button ml-1" onclick="closeModal()">Cancel</button>
+    </footer>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script src="{% static 'necroporra/js/utils.js' %}"></script>
+<script>
+const SLUG = "{{ pool.slug }}";
+
+// ── Modal helpers ──────────────────────────────────────────────
+function openModal(title, body, confirmFn, confirmClass = 'is-primary') {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.className = `button ${confirmClass}`;
+  btn.onclick = () => { closeModal(); confirmFn(); };
+  document.getElementById('confirm-modal').classList.add('is-active');
+}
+
+function closeModal() {
+  document.getElementById('confirm-modal').classList.remove('is-active');
+}
+
+// ── Transfer admin ─────────────────────────────────────────────
+function makeAdmin(userId, username) {
+  openModal(
+    'Transfer Admin Rights',
+    `Are you sure you want to make ${username} the new admin? You will lose your admin access immediately.`,
+    () => doTransferAdmin(userId, username),
+    'is-warning'
+  );
+}
+
+async function doTransferAdmin(userId, username) {
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/transfer-admin/`, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    });
+    showNotification(data.detail, 'success');
+    // Reload to reflect new admin state
+    setTimeout(() => window.location.reload(), 900);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  }
+}
+
+// ── Remove member ──────────────────────────────────────────────
+function removeMember(userId, username) {
+  openModal(
+    'Remove Member',
+    `Remove ${username} from this pool? Their predictions will also be deleted.`,
+    () => doRemoveMember(userId, username),
+    'is-danger'
+  );
+}
+
+async function doRemoveMember(userId, username) {
+  try {
+    await fetchWithCsrf(`/api/pools/${SLUG}/remove-member/`, {
+      method: 'POST',
+      body: JSON.stringify({ user_id: userId }),
+    });
+    showNotification(`${username} removed from the pool.`, 'success');
+    // Remove the row from the DOM
+    const row = document.getElementById(`row-${userId}`);
+    if (row) row.remove();
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  }
+}
+
+// ── Reveal picks ───────────────────────────────────────────────
+function revealPicks() {
+  openModal(
+    'Reveal All Picks',
+    "Make everyone's predictions visible immediately? This cannot be undone.",
+    doRevealPicks,
+    'is-warning'
+  );
+}
+
+async function doRevealPicks() {
+  const btn = document.getElementById('btn-reveal-picks');
+  if (btn) btn.classList.add('is-loading');
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/reveal-picks/`, {
+      method: 'POST',
+    });
+    showNotification(data.detail, 'success');
+    setTimeout(() => window.location.reload(), 900);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+    if (btn) btn.classList.remove('is-loading');
+  }
+}
+
+// ── Mark celebrity as dead ────────────────────────────────────
+function markDead(celebrityId, name) {
+  openModal(
+    'Mark as Dead',
+    `Mark ${name} as dead in this pool? Predictions for ${name} will be scored immediately using today's date.`,
+    () => doMarkDead(celebrityId, name),
+    'is-danger'
+  );
+}
+
+async function doMarkDead(celebrityId, name) {
+  const btn = document.getElementById(`btn-mark-${celebrityId}`);
+  if (btn) btn.classList.add('is-loading');
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/mark-dead/`, {
+      method: 'POST',
+      body: JSON.stringify({ celebrity_id: celebrityId, action: 'mark' }),
+    });
+    showNotification(data.detail, 'success');
+    setTimeout(() => window.location.reload(), 900);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+    if (btn) btn.classList.remove('is-loading');
+  }
+}
+
+// ── Unmark celebrity death ─────────────────────────────────────
+function unmarkDead(celebrityId, name) {
+  openModal(
+    'Unmark Death',
+    `Remove the manual death mark for ${name}? Their predictions will be reset to pending.`,
+    () => doUnmarkDead(celebrityId, name),
+    'is-warning'
+  );
+}
+
+async function doUnmarkDead(celebrityId, name) {
+  const btn = document.getElementById(`btn-unmark-${celebrityId}`);
+  if (btn) btn.classList.add('is-loading');
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/mark-dead/`, {
+      method: 'POST',
+      body: JSON.stringify({ celebrity_id: celebrityId, action: 'unmark' }),
+    });
+    showNotification(data.detail, 'success');
+    setTimeout(() => window.location.reload(), 900);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+    if (btn) btn.classList.remove('is-loading');
+  }
+}
+
+// ── Delete pool ────────────────────────────────────────────────
+function deletePool() {
+  openModal(
+    'Delete Pool',
+    `Delete "${document.querySelector('.subtitle span:not(.tag)')?.textContent?.trim() || 'this pool'}"? All data will be permanently lost.`,
+    doDeletePool,
+    'is-danger'
+  );
+}
+
+async function doDeletePool() {
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/delete/`, {
+      method: 'POST',
+    });
+    showNotification('Pool deleted. Redirecting…', 'success');
+    setTimeout(() => window.location.href = data.redirect || '/dashboard/', 1000);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  }
+}
+</script>
+{% endblock %}

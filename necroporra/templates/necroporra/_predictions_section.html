@@ -1,0 +1,108 @@
+{# Reusable predictions section - included from pool_detail.html #}
+<div class="level">
+  <div class="level-left">
+    <div class="level-item">
+      <h2 class="title is-4">Your Predictions</h2>
+    </div>
+  </div>
+  <div class="level-right">
+    <div class="level-item">
+      <button id="addPredictionBtn" class="button is-primary">
+        <span class="icon"><i class="fas fa-plus"></i></span>
+        <span>Add Prediction</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+{# Search Form (hidden by default) #}
+<div id="searchForm" style="display: none;">
+  <div class="has-text-centered mb-4">
+    <button id="cancelSearchBtn" class="button is-small is-light is-fullwidth">
+      <span class="icon"><i class="fas fa-arrow-left"></i></span>
+      <span>Go back</span>
+    </button>
+  </div>
+  <div class="notification is-info is-light">
+    <p>Search for a celebrity to add to your predictions</p>
+  </div>
+
+  <form id="celebritySearchForm">
+    <div class="field has-addons">
+      <div class="control is-expanded">
+        <input class="input" type="text" id="searchQuery" placeholder="Search celebrity name" autocomplete="off">
+      </div>
+      <div class="control">
+        <button type="submit" class="button is-info" id="searchBtn">
+          <span class="icon"><i class="fas fa-search"></i></span>
+          <span>Search</span>
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div id="searchResults" class="mt-4"></div>
+  <div id="searchError" class="notification is-danger is-light" style="display: none;"></div>
+</div>
+
+{# Predictions List #}
+<div id="predictionsList">
+  {% if user_predictions %}
+  <div class="columns is-multiline">
+    {% for prediction in user_predictions %}
+    <div class="column is-half">
+      <div class="card">
+        <div class="card-content">
+          <div class="media">
+            <div class="media-left">
+              {% if prediction.celebrity.image_url %}
+              <figure class="image is-64x64">
+                <img src="{{ prediction.celebrity.image_url }}" alt="{{ prediction.celebrity.name }}" style="object-fit: cover; border-radius: 4px;">
+              </figure>
+              {% else %}
+              <div class="celebrity-image-placeholder" style="width: 64px; height: 64px; border-radius: 4px; font-size: 1.5rem;">
+                {{ prediction.celebrity.name|slice:":2"|upper }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="media-content">
+              <p class="title is-6">{{ prediction.celebrity.name }}</p>
+              {% if prediction.celebrity.birth_date %}
+              <p class="subtitle is-7">Born: {{ prediction.celebrity.birth_date }}</p>
+              {% endif %}
+              <span class="tag {% if prediction.is_correct == None %}is-light{% elif prediction.is_correct %}is-success{% else %}is-danger{% endif %}">
+                {% if prediction.is_correct == None %}
+                Pending
+                {% elif prediction.is_correct %}
+                ✓ Correct
+                {% else %}
+                ✗ Wrong
+                {% endif %}
+              </span>
+              {% if pool.scoring_mode == 'distributed' %}
+              <span class="tag is-warning is-light ml-1">Bet: {{ prediction.weight }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <footer class="card-footer">
+          <a class="card-footer-item has-text-danger delete-pick-btn"
+             data-prediction-id="{{ prediction.id }}"
+             data-celebrity-name="{{ prediction.celebrity.name }}"
+             href="#">
+            <span class="icon is-small"><i class="fas fa-trash"></i></span>
+            <span>Delete</span>
+          </a>
+        </footer>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="notification is-info is-light">
+    <p class="has-text-centered">
+      No predictions yet. Click "Add Prediction" to get started!
+    </p>
+  </div>
+  {% endif %}
+</div>

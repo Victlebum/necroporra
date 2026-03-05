@@ -1,0 +1,79 @@
+{% extends "necroporra/layout.html" %}
+
+{% block title %}Login - Necroporra{% endblock %}
+
+{% block messages %}{% endblock %}
+
+{% block content %}
+<section class="hero is-fullheight is-primary">
+  <div class="hero-body">
+    <div class="container">
+      <div class="columns is-centered">
+        <div class="column is-5-tablet is-4-desktop is-3-widescreen">
+          <div class="box">
+            <h1 class="title has-text-centered">Necroporra</h1>
+            <p class="subtitle has-text-centered">Welcome Back</p>
+
+            {% for message in messages %}
+            <div class="notification {% if message.tags %}is-{{ message.tags }}{% endif %}">
+              <button class="delete"></button>
+              {{ message }}
+            </div>
+            {% endfor %}
+
+            <form method="post">
+              {% csrf_token %}
+
+              {% if form.non_field_errors %}
+              <div class="notification is-danger is-light">
+                {{ form.non_field_errors }}
+              </div>
+              {% endif %}
+
+              <div class="field">
+                <label class="label">Username</label>
+                <div class="control has-icons-left">
+                  {{ form.username }}
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-user"></i>
+                  </span>
+                </div>
+                {% if form.username.errors %}
+                <p class="help is-danger">{{ form.username.errors.0 }}</p>
+                {% endif %}
+              </div>
+
+              <div class="field">
+                <label class="label">Password</label>
+                <div class="control has-icons-left">
+                  {{ form.password }}
+                  <span class="icon is-small is-left">
+                    <i class="fas fa-lock"></i>
+                  </span>
+                </div>
+                {% if form.password.errors %}
+                <p class="help is-danger">{{ form.password.errors.0 }}</p>
+                {% endif %}
+              </div>
+
+              <div class="field">
+                <div class="control">
+                  <button type="submit" class="button is-primary is-fullwidth">
+                    Login
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <hr>
+
+            <p class="has-text-centered">
+              Don't have an account? <a href="{% url 'register' %}">Sign up here</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

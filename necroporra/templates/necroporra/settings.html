@@ -1,0 +1,268 @@
+{% extends "necroporra/layout.html" %}
+{% load static %}
+
+{% block title %}Settings - Necroporra{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+
+    {# Header #}
+    <div class="level mb-5">
+      <div class="level-left">
+        <div class="level-item">
+          <h1 class="title">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-cog"></i></span>
+              <span>Settings</span>
+            </span>
+          </h1>
+        </div>
+      </div>
+      <div class="level-right">
+        <div class="level-item">
+          <a href="{% url 'dashboard' %}" class="button">
+            <span class="icon"><i class="fas fa-arrow-left"></i></span>
+            <span>Back to Dashboard</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    {# ── Pool Memberships ───────────────────────────────────── #}
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-3">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-users"></i></span>
+          <span>Your Pools</span>
+        </span>
+      </h2>
+
+      {% if memberships %}
+      <div class="table-container">
+      <table class="table is-fullwidth is-hoverable is-striped">
+        <thead>
+          <tr>
+            <th>Pool</th>
+            <th class="has-text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in memberships %}
+          <tr id="pool-row-{{ m.pool.id }}">
+            <td>
+              <a href="{% url 'pool_detail' slug=m.pool.slug %}">{{ m.pool.name }}</a>
+              {% if m.pool.admin == user %}
+                <span class="tag is-warning ml-2">Admin</span>
+              {% endif %}
+            </td>
+            <td class="has-text-right">
+              <button
+                class="button is-danger is-small is-outlined"
+                onclick="leavePool({{ m.pool.id }}, {{ m.pool.admin_id }}, '{{ m.pool.slug }}', '{{ m.pool.name|escapejs }}', {{ m.member_count }})"
+              >
+                <span class="icon"><i class="fas fa-right-from-bracket"></i></span>
+                <span>Leave</span>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      {% else %}
+      <p class="has-text-grey">You are not a member of any pools.</p>
+      {% endif %}
+    </div>
+
+    {# ── Change Password ────────────────────────────────────── #}
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-3">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-key"></i></span>
+          <span>Change Password</span>
+        </span>
+      </h2>
+
+      <form method="post" action="{% url 'change_password' %}">
+        {% csrf_token %}
+
+        <div class="field">
+          <label class="label" for="id_old_password">{{ password_form.old_password.label }}</label>
+          <div class="control">
+            {{ password_form.old_password }}
+          </div>
+          {% if password_form.old_password.errors %}
+            {% for error in password_form.old_password.errors %}
+              <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label" for="id_new_password1">{{ password_form.new_password1.label }}</label>
+          <div class="control">
+            {{ password_form.new_password1 }}
+          </div>
+          {% if password_form.new_password1.help_text %}
+            <p class="help">{{ password_form.new_password1.help_text }}</p>
+          {% endif %}
+          {% if password_form.new_password1.errors %}
+            {% for error in password_form.new_password1.errors %}
+              <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <label class="label" for="id_new_password2">{{ password_form.new_password2.label }}</label>
+          <div class="control">
+            {{ password_form.new_password2 }}
+          </div>
+          {% if password_form.new_password2.errors %}
+            {% for error in password_form.new_password2.errors %}
+              <p class="help is-danger">{{ error }}</p>
+            {% endfor %}
+          {% endif %}
+        </div>
+
+        <div class="field">
+          <div class="control">
+            <button type="submit" class="button is-primary">
+              <span class="icon"><i class="fas fa-check"></i></span>
+              <span>Change Password</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    {# ── Danger Zone ────────────────────────────────────────── #}
+    <div class="box mb-5" style="border-left: 4px solid hsl(348, 100%, 61%);">
+      <h2 class="title is-5 mb-3 has-text-danger">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-triangle-exclamation"></i></span>
+          <span>Danger Zone</span>
+        </span>
+      </h2>
+      <p class="mb-4">
+        Deleting your account is <strong>permanent</strong>. All your pools, predictions, and data will be irreversibly removed.
+      </p>
+      <button class="button is-danger" onclick="deleteAccount()">
+        <span class="icon"><i class="fas fa-skull-crossbones"></i></span>
+        <span>Delete My Account</span>
+      </button>
+    </div>
+
+  </div>
+</section>
+
+{# Confirmation Modal #}
+<div class="modal" id="confirm-modal">
+  <div class="modal-background" onclick="closeModal()"></div>
+  <div class="modal-card">
+    <header class="modal-card-head">
+      <p class="modal-card-title" id="modal-title">Confirm Action</p>
+      <button class="delete" aria-label="close" onclick="closeModal()"></button>
+    </header>
+    <section class="modal-card-body">
+      <div id="modal-body"></div>
+    </section>
+    <footer class="modal-card-foot">
+      <button class="button" id="modal-confirm-btn">Confirm</button>
+      <button class="button ml-1" onclick="closeModal()">Cancel</button>
+    </footer>
+  </div>
+</div>
+
+{% endblock %}
+
+
+{% block extra_js %}
+<script>
+const USER_ID = {{ user.id }};
+
+// ── Modal helpers ──────────────────────────────────────────────
+function openModal(title, bodyHtml, confirmFn, confirmClass = 'is-primary') {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').innerHTML = bodyHtml;
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.className = `button ${confirmClass}`;
+  btn.onclick = () => { closeModal(); confirmFn(); };
+  document.getElementById('confirm-modal').classList.add('is-active');
+}
+
+function closeModal() {
+  document.getElementById('confirm-modal').classList.remove('is-active');
+}
+
+// ── Leave Pool ─────────────────────────────────────────────────
+function leavePool(poolId, adminId, poolSlug, poolName, memberCount) {
+  const isAdmin = (adminId === USER_ID);
+  let title, body, btnLabel;
+
+  if (isAdmin && memberCount > 1) {
+    title = 'Delete Pool?';
+    body = `You are the admin of <strong>${poolName}</strong>. Leaving will <strong>permanently delete the pool</strong> and all its data for every member.`
+         + `<br><br>You can <a href="/pools/${poolSlug}/admin/">transfer admin rights</a> instead.`;
+    btnLabel = 'Delete Pool &amp; Leave';
+  } else if (isAdmin) {
+    title = 'Leave Pool?';
+    body = `Are you sure you want to leave <strong>${poolName}</strong>? Since you are the only member, the pool will be deleted.`;
+    btnLabel = 'Leave Pool';
+  } else {
+    title = 'Leave Pool?';
+    body = `Are you sure you want to leave <strong>${poolName}</strong>? You will lose all your predictions in this pool.`;
+    btnLabel = 'Leave Pool';
+  }
+
+  openModal(title, body, async () => {
+    try {
+      const data = await fetchWithCsrf('/api/settings/leave-pool/', {
+        method: 'POST',
+        body: JSON.stringify({ pool_id: poolId }),
+      });
+      showNotification(data.detail, 'success');
+      const row = document.getElementById(`pool-row-${poolId}`);
+      if (row) row.remove();
+      // Show empty message if no rows remain
+      const tbody = document.querySelector('.table tbody');
+      if (tbody && tbody.children.length === 0) {
+        const box = tbody.closest('.box');
+        box.querySelector('.table').remove();
+        const p = document.createElement('p');
+        p.className = 'has-text-grey';
+        p.textContent = 'You are not a member of any pools.';
+        box.appendChild(p);
+      }
+    } catch (e) {
+      showNotification(e.message || 'Failed to leave pool.', 'danger');
+    }
+  }, 'is-danger');
+
+  // Set button label after openModal (innerHTML for the &amp;)
+  document.getElementById('modal-confirm-btn').innerHTML = btnLabel;
+}
+
+// ── Delete Account ─────────────────────────────────────────────
+function deleteAccount() {
+  openModal(
+    'Delete Account?',
+    'This action is <strong>irreversible</strong>. Your account and <strong>all associated data</strong> (pools you administer, memberships, predictions) will be permanently deleted.',
+    async () => {
+      try {
+        const data = await fetchWithCsrf('/api/settings/delete-account/', {
+          method: 'POST',
+        });
+        showNotification(data.detail, 'success');
+        setTimeout(() => { window.location.href = data.redirect || '/login/'; }, 800);
+      } catch (e) {
+        showNotification(e.message || 'Failed to delete account.', 'danger');
+      }
+    },
+    'is-danger'
+  );
+  document.getElementById('modal-confirm-btn').textContent = 'Delete My Account';
+}
+</script>
+{% endblock %}

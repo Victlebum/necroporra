@@ -1,0 +1,15 @@
+{
+  "name": "necroporra",
+  "version": "1.0.0",
+  "description": "Dead pool application with Django and Bulma",
+  "scripts": {
+    "build:css": "sass necroporra/static/necroporra/scss/custom.scss necroporra/static/necroporra/css/styles.css",
+    "watch:css": "sass --watch necroporra/static/necroporra/scss/custom.scss necroporra/static/necroporra/css/styles.css"
+  },
+  "dependencies": {
+    "bulma": "^1.0.0"
+  },
+  "devDependencies": {
+    "sass": "^1.69.0"
+  }
+}

@@ -1,0 +1,642 @@
+"""
+Comprehensive tests for necroporra.
+"""
+from django.test import TestCase, Client
+from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from django.urls import reverse
+from datetime import timedelta
+from unittest.mock import patch, MagicMock
+import json
+
+from .models import Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction
+from .forms import CreatePoolForm, RegisterForm
+from . import wikidata_utils
+
+
+class PoolModelTest(TestCase):
+    """Test Pool model functionality."""
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpass123')
+    
+    def test_pool_creation(self):
+        """Test creating a basic pool."""
+        pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Test Pool',
+            slug='ABCDE',
+            timeframe_choice='1_year',
+            limit_date=timezone.now() + timedelta(days=365)
+        )
+        self.assertEqual(pool.name, 'Test Pool')
+        self.assertTrue(pool.is_pool_active())
+    
+    def test_generate_unique_slug(self):
+        """Test slug generation creates unique 5-char codes."""
+        slug1 = Pool.generate_slug()
+        slug2 = Pool.generate_slug()
+        
+        self.assertEqual(len(slug1), 5)
+        self.assertEqual(len(slug2), 5)
+        self.assertNotEqual(slug1, slug2)
+    
+    def test_calculate_limit_date(self):
+        """Test limit date calculation for different timeframes."""
+        start = timezone.now()
+        
+        # Test 1 month
+        limit = Pool.calculate_limit_date('1_month', start)
+        self.assertGreater(limit, start)
+        
+        # Test 1 year
+        limit = Pool.calculate_limit_date('1_year', start)
+        self.assertGreater(limit, start)
+    
+    def test_pool_active_status(self):
+        """Test is_pool_active() method."""
+        # Active pool
+        pool_active = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Active Pool',
+            slug='ACTIV',
+            limit_date=timezone.now() + timedelta(days=30)
+        )
+        self.assertTrue(pool_active.is_pool_active())
+        
+        # Expired pool
+        pool_expired = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Expired Pool',
+            slug='EXPIR',
+            limit_date=timezone.now() - timedelta(days=1)
+        )
+        self.assertFalse(pool_expired.is_pool_active())
+    
+    def test_days_remaining(self):
+        """Test days_remaining calculation."""
+        pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Test Pool',
+            slug='DAYSZ',
+            limit_date=timezone.now() + timedelta(days=10)
+        )
+        self.assertGreaterEqual(pool.days_remaining(), 9)  # Account for time passing
+        self.assertLessEqual(pool.days_remaining(), 10)
+
+
+class CelebrityModelTest(TestCase):
+    """Test Celebrity model functionality."""
+    
+    def test_celebrity_creation(self):
+        """Test creating a celebrity."""
+        celeb = Celebrity.objects.create(
+            name='Test Celebrity',
+            bio='Famous person',
+            wikidata_id='Q12345'
+        )
+        self.assertEqual(celeb.name, 'Test Celebrity')
+        self.assertFalse(celeb.is_deceased())
+    
+    def test_is_deceased(self):
+        """Test is_deceased() method."""
+        # Living celebrity
+        living = Celebrity.objects.create(name='Living Person')
+        self.assertFalse(living.is_deceased())
+        
+        # Deceased celebrity
+        deceased = Celebrity.objects.create(
+            name='Deceased Person',
+            death_date=timezone.now().date()
+        )
+        self.assertTrue(deceased.is_deceased())
+
+
+class PredictionModelTest(TestCase):
+    """Test Prediction model and validation."""
+    
+    def setUp(self):
+        self.user = User.objects.create_user(username='testuser', password='testpass123')
+        self.pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Test Pool',
+            slug='PRED1',
+            limit_date=timezone.now() + timedelta(days=365),
+            max_predictions_per_user=3,
+            scoring_mode='simple'
+        )
+        self.celebrity = Celebrity.objects.create(
+            name='Test Celebrity',
+            wikidata_id='Q99999'
+        )
+        PoolMembership.objects.create(pool=self.pool, user=self.user)
+    
+    def test_prediction_creation(self):
+        """Test creating a valid prediction."""
+        prediction = Prediction.objects.create(
+            user=self.user,
+            pool=self.pool,
+            celebrity=self.celebrity
+        )
+        self.assertIsNone(prediction.is_correct)
+        self.assertEqual(prediction.weight, 1)
+    
+    def test_max_predictions_validation(self):
+        """Test that max predictions per user is enforced."""
+        # Create max predictions (3)
+        for i in range(3):
+            celeb = Celebrity.objects.create(
+                name=f'Celebrity {i}',
+                wikidata_id=f'Q{i}'
+            )
+            Prediction.objects.create(
+                user=self.user,
+                pool=self.pool,
+                celebrity=celeb
+            )
+        
+        # Try to create one more (should fail validation)
+        extra_celeb = Celebrity.objects.create(
+            name='Extra Celebrity',
+            wikidata_id='QEXTRA'
+        )
+        prediction = Prediction(
+            user=self.user,
+            pool=self.pool,
+            celebrity=extra_celeb
+        )
+        
+        with self.assertRaises(ValidationError):
+            prediction.clean()
+    
+    def test_distributed_scoring_weight_validation(self):
+        """Test weight budget validation for distributed scoring."""
+        self.pool.scoring_mode = 'distributed'
+        self.pool.save()
+        
+        # Create predictions with weights totaling 8
+        for i in range(2):
+            celeb = Celebrity.objects.create(
+                name=f'Celebrity {i}',
+                wikidata_id=f'Q{i}'
+            )
+            Prediction.objects.create(
+                user=self.user,
+                pool=self.pool,
+                celebrity=celeb,
+                weight=4
+            )
+        
+        # Try to add prediction with weight 3 (total would be 11 > 10)
+        extra_celeb = Celebrity.objects.create(
+            name='Extra Celebrity',
+            wikidata_id='QEXTRA'
+        )
+        prediction = Prediction(
+            user=self.user,
+            pool=self.pool,
+            celebrity=extra_celeb,
+            weight=3
+        )
+        
+        with self.assertRaises(ValidationError):
+            prediction.clean()
+    
+    def test_inactive_pool_prediction(self):
+        """Test that predictions cannot be created for inactive pools."""
+        expired_pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Expired Pool',
+            slug='EXPIR',
+            limit_date=timezone.now() - timedelta(days=1)
+        )
+        
+        prediction = Prediction(
+            user=self.user,
+            pool=expired_pool,
+            celebrity=self.celebrity
+        )
+        
+        with self.assertRaises(ValidationError):
+            prediction.clean()
+
+
+class CreatePoolFormTest(TestCase):
+    """Test CreatePoolForm validation."""
+    
+    def test_valid_form(self):
+        """Test form with valid data."""
+        form_data = {
+            'name': 'Test Pool',
+            'description': 'Test description',
+            'timeframe_choice': '1_year',
+            'is_public': True,
+            'max_predictions_per_user': 5,
+            'scoring_mode': 'simple',
+            'picks_visible_from_start': True,
+        }
+        form = CreatePoolForm(data=form_data)
+        self.assertTrue(form.is_valid())
+    
+    def test_picks_visibility_validation(self):
+        """Test that picks visibility settings are validated."""
+        # Invalid: not visible from start and no days specified
+        form_data = {
+            'name': 'Test Pool',
+            'timeframe_choice': '1_year',
+            'is_public': True,
+            'max_predictions_per_user': 5,
+            'scoring_mode': 'simple',
+            'picks_visible_from_start': False,
+            'picks_visible_after_days': None,
+        }
+        form = CreatePoolForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        
+        # Valid: picks visible after 3 days
+        form_data['picks_visible_after_days'] = 3
+        form = CreatePoolForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+
+class RegisterFormTest(TestCase):
+    """Test RegisterForm validation."""
+    
+    def test_valid_registration(self):
+        """Test valid registration form."""
+        form_data = {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'securepass123',
+            'password_confirm': 'securepass123'
+        }
+        form = RegisterForm(data=form_data)
+        self.assertTrue(form.is_valid())
+    
+    def test_password_mismatch(self):
+        """Test password confirmation validation."""
+        form_data = {
+            'username': 'newuser',
+            'email': 'newuser@example.com',
+            'password': 'securepass123',
+            'password_confirm': 'differentpass'
+        }
+        form = RegisterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('password_confirm', form.errors)
+    
+    def test_duplicate_email(self):
+        """Test that duplicate emails are rejected."""
+        User.objects.create_user(
+            username='existing',
+            email='existing@example.com',
+            password='pass123'
+        )
+        
+        form_data = {
+            'username': 'newuser',
+            'email': 'existing@example.com',
+            'password': 'securepass123',
+            'password_confirm': 'securepass123'
+        }
+        form = RegisterForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('email', form.errors)
+
+
+class ViewsTest(TestCase):
+    """Test views and endpoints."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='testpass123')
+        self.pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Test Pool',
+            slug='TEST1',
+            limit_date=timezone.now() + timedelta(days=365)
+        )
+        PoolMembership.objects.create(pool=self.pool, user=self.user)
+    
+    def test_dashboard_view(self):
+        """Test dashboard view requires login."""
+        # Not logged in - should redirect
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 302)
+        
+        # Logged in - should work
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('dashboard'))
+        self.assertEqual(response.status_code, 200)
+    
+    def test_pool_detail_view(self):
+        """Test pool detail view."""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('pool_detail', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.pool.name)
+    
+    def test_create_pool_view(self):
+        """Test pool creation view."""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('create_pool'))
+        self.assertEqual(response.status_code, 200)
+
+
+class WikidataUtilsTest(TestCase):
+    """Test wikidata_utils functions with mocking."""
+    
+    @patch('necroporra.wikidata_utils.requests.get')
+    def test_get_wikidata_entity(self, mock_get):
+        """Test fetching Wikidata entity."""
+        # Mock response
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            'entities': {
+                'Q123': {
+                    'labels': {'en': {'value': 'Test Person'}},
+                    'descriptions': {'en': {'value': 'Test description'}},
+                    'claims': {
+                        'P31': [{
+                            'mainsnak': {
+                                'datavalue': {
+                                    'value': {'id': 'Q5'}
+                                }
+                            }
+                        }],
+                        'P569': [{
+                            'mainsnak': {
+                                'datavalue': {
+                                    'value': {
+                                        'time': '+1950-01-01T00:00:00Z'
+                                    }
+                                }
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+        mock_get.return_value = mock_response
+        
+        result = wikidata_utils.get_wikidata_entity('Q123')
+        
+        self.assertIsNotNone(result)
+        self.assertEqual(result['name'], 'Test Person')
+        self.assertEqual(result['wikidata_id'], 'Q123')
+        self.assertEqual(result['birth_date'], '1950-01-01')
+    
+    @patch('necroporra.wikidata_utils.requests.get')
+    def test_search_wikidata_people(self, mock_get):
+        """Test searching Wikidata for people."""
+        # Mock search response (cirrus full-text search via action=query)
+        search_response = MagicMock()
+        search_response.status_code = 200
+        search_response.json.return_value = {
+            'query': {
+                'search': [
+                    {'title': 'Q123'}
+                ]
+            }
+        }
+        
+        # Mock entity response (wbgetentities batch fetch)
+        entity_response = MagicMock()
+        entity_response.status_code = 200
+        entity_response.json.return_value = {
+            'entities': {
+                'Q123': {
+                    'labels': {'en': {'value': 'Test Person'}},
+                    'descriptions': {'en': {'value': 'Test bio'}},
+                    'claims': {
+                        'P31': [{
+                            'mainsnak': {
+                                'datavalue': {
+                                    'value': {'id': 'Q5'}
+                                }
+                            }
+                        }]
+                    }
+                }
+            }
+        }
+        
+        # Return different responses based on API action
+        def side_effect(url, *args, **kwargs):
+            params = kwargs.get('params', {})
+            if 'srsearch' in params:
+                return search_response
+            else:
+                return entity_response
+        
+        mock_get.side_effect = side_effect
+        
+        results = wikidata_utils.search_wikidata_people('Test')
+        
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]['name'], 'Test Person')
+
+
+class IntegrationTest(TestCase):
+    """Integration tests for common workflows."""
+    
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='testuser', password='testpass123')
+    
+    def test_pool_creation_and_prediction_workflow(self):
+        """Test complete workflow: create pool, join, make prediction."""
+        self.client.login(username='testuser', password='testpass123')
+        
+        # Create pool
+        response = self.client.post(reverse('create_pool'), {
+            'name': 'Integration Test Pool',
+            'description': 'Test description',
+            'timeframe_choice': '1_year',
+            'is_public': True,
+            'max_predictions_per_user': 5,
+            'scoring_mode': 'simple',
+            'picks_visible_from_start': True,
+        })
+        
+        # Should redirect to pool detail
+        self.assertEqual(response.status_code, 302)
+        
+        # Verify pool was created
+        pool = Pool.objects.get(name='Integration Test Pool')
+        self.assertIsNotNone(pool)
+        
+        # Verify user is a member
+        membership = PoolMembership.objects.filter(pool=pool, user=self.user)
+        self.assertTrue(membership.exists())
+        
+        # Create a celebrity and make a prediction
+        celebrity = Celebrity.objects.create(
+            name='Test Celebrity',
+            wikidata_id='QTEST'
+        )
+        
+        prediction = Prediction.objects.create(
+            user=self.user,
+            pool=pool,
+            celebrity=celebrity
+        )
+        
+        self.assertIsNone(prediction.is_correct)
+        self.assertEqual(prediction.user, self.user)
+        self.assertEqual(prediction.pool, pool)
+
+
+class UserDeletionCascadeTest(TestCase):
+    """Test that deleting a user cascades correctly through pools, memberships, and predictions."""
+
+    def _make_pool(self, creator, admin=None, name='Test Pool'):
+        """Helper to create a pool with a membership for the admin."""
+        pool = Pool.objects.create(
+            creator=creator,
+            admin=admin or creator,
+            name=name,
+            slug=Pool.generate_slug(),
+            timeframe_choice='1_year',
+            limit_date=timezone.now() + timedelta(days=365),
+        )
+        PoolMembership.objects.create(pool=pool, user=admin or creator)
+        return pool
+
+    def _add_member(self, pool, user):
+        """Helper to add a member to a pool."""
+        return PoolMembership.objects.create(pool=pool, user=user)
+
+    def _add_prediction(self, pool, user, celebrity):
+        """Helper to add a prediction."""
+        return Prediction.objects.create(pool=pool, user=user, celebrity=celebrity)
+
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='user1', password='pass')
+        self.user2 = User.objects.create_user(username='user2', password='pass')
+        self.user3 = User.objects.create_user(username='user3', password='pass')
+        self.celeb = Celebrity.objects.create(name='Famous Person', wikidata_id='Q999')
+
+    # ------------------------------------------------------------------
+    # Test A: Delete admin (who is also creator) -> pool is destroyed
+    # ------------------------------------------------------------------
+    def test_delete_admin_destroys_pool(self):
+        """Deleting the admin user cascades to delete the pool and everything in it."""
+        pool = self._make_pool(self.user1)
+        self._add_member(pool, self.user2)
+        self._add_prediction(pool, self.user1, self.celeb)
+        self._add_prediction(pool, self.user2, self.celeb)
+        PoolCelebrity.objects.create(pool=pool, celebrity=self.celeb, added_by=self.user1)
+
+        pool_id = pool.id
+
+        self.user1.delete()
+
+        self.assertFalse(Pool.objects.filter(id=pool_id).exists())
+        self.assertFalse(PoolMembership.objects.filter(pool_id=pool_id).exists())
+        self.assertFalse(Prediction.objects.filter(pool_id=pool_id).exists())
+        self.assertFalse(PoolCelebrity.objects.filter(pool_id=pool_id).exists())
+
+    # ------------------------------------------------------------------
+    # Test B: Creator transfers admin away, then creator is deleted ->
+    #         pool survives, creator field becomes NULL
+    # ------------------------------------------------------------------
+    def test_delete_non_admin_creator_pool_survives(self):
+        """Deleting a creator who is no longer admin leaves the pool intact."""
+        pool = self._make_pool(self.user1)
+        self._add_member(pool, self.user2)
+
+        # Transfer admin to user2
+        pool.admin = self.user2
+        pool.save(update_fields=['admin'])
+
+        self.user1.delete()
+
+        pool.refresh_from_db()
+        self.assertIsNone(pool.creator)
+        self.assertEqual(pool.admin, self.user2)
+
+    # ------------------------------------------------------------------
+    # Test C: After admin transfer, delete the new admin -> pool dies
+    # ------------------------------------------------------------------
+    def test_delete_transferred_admin_destroys_pool(self):
+        """After admin transfer, deleting the new admin still destroys the pool."""
+        pool = self._make_pool(self.user1)
+        self._add_member(pool, self.user2)
+        pool.admin = self.user2
+        pool.save(update_fields=['admin'])
+
+        pool_id = pool.id
+
+        self.user2.delete()
+
+        self.assertFalse(Pool.objects.filter(id=pool_id).exists())
+
+    # ------------------------------------------------------------------
+    # Test D: Delete a regular member -> pool survives, their data gone
+    # ------------------------------------------------------------------
+    def test_delete_regular_member_pool_survives(self):
+        """Deleting a non-admin member removes their membership and predictions but keeps the pool."""
+        pool = self._make_pool(self.user1)
+        self._add_member(pool, self.user2)
+        PoolCelebrity.objects.create(pool=pool, celebrity=self.celeb, added_by=self.user2)
+        self._add_prediction(pool, self.user2, self.celeb)
+
+        user2_id = self.user2.id
+        self.user2.delete()
+
+        pool.refresh_from_db()  # pool still exists
+        self.assertEqual(pool.admin, self.user1)
+        self.assertFalse(Prediction.objects.filter(user_id=user2_id).exists())
+        self.assertFalse(PoolMembership.objects.filter(user_id=user2_id).exists())
+
+    # ------------------------------------------------------------------
+    # Test E: Admin of multiple pools deleted -> all those pools deleted
+    # ------------------------------------------------------------------
+    def test_delete_admin_of_multiple_pools(self):
+        """Deleting a user who admins multiple pools destroys all of them."""
+        pool_a = self._make_pool(self.user1, name='Pool A')
+        pool_b = self._make_pool(self.user1, name='Pool B')
+        self._add_member(pool_a, self.user2)
+        self._add_member(pool_b, self.user3)
+
+        ids = [pool_a.id, pool_b.id]
+
+        self.user1.delete()
+
+        self.assertEqual(Pool.objects.filter(id__in=ids).count(), 0)
+
+    # ------------------------------------------------------------------
+    # Test F: PoolCelebrity.added_by is SET_NULL on user deletion
+    # ------------------------------------------------------------------
+    def test_pool_celebrity_added_by_set_null(self):
+        """When a non-admin user is deleted, PoolCelebrity.added_by becomes NULL."""
+        pool = self._make_pool(self.user1)
+        self._add_member(pool, self.user2)
+        pc = PoolCelebrity.objects.create(pool=pool, celebrity=self.celeb, added_by=self.user2)
+
+        self.user2.delete()
+
+        pc.refresh_from_db()
+        self.assertIsNone(pc.added_by)
+
+    # ------------------------------------------------------------------
+    # Test G: Pool with only admin member -- delete admin -> pool gone
+    # ------------------------------------------------------------------
+    def test_delete_sole_member_admin(self):
+        """Deleting the only member (who is the admin) destroys the pool."""
+        pool = self._make_pool(self.user1)
+        pool_id = pool.id
+
+        self.user1.delete()
+
+        self.assertFalse(Pool.objects.filter(id=pool_id).exists())

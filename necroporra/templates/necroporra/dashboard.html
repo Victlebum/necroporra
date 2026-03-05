@@ -1,0 +1,167 @@
+{% extends "necroporra/layout.html" %}
+
+{% block title %}Dashboard - Necroporra{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <h1 class="title">Your Pools</h1>
+
+    {# Pools Grid #}
+    {% if pools %}
+    <div class="columns is-multiline">
+      {% for pool_data in pools %}
+      <div class="column is-one-third">
+        <a href="{% url 'pool_detail' slug=pool_data.pool.slug %}">
+          <div class="card pool-card">
+            <div class="card-content">
+              <p class="title is-4">{{ pool_data.pool.name }}</p>
+              <p class="subtitle is-6">
+                <span class="tag is-info">{{ pool_data.pool.slug }}</span>
+                <span class="tag {% if pool_data.pool.is_pool_active %}is-success{% else %}is-danger{% endif %}">
+                  {% if pool_data.pool.is_pool_active %}Active{% else %}Ended{% endif %}
+                </span>
+                <span class="tag {% if pool_data.pool.is_public %}is-light{% else %}is-warning{% endif %}">
+                  <i class="fas fa-{% if pool_data.pool.is_public %}globe{% else %}lock{% endif %}"></i>
+                  <span class="ml-1">{% if pool_data.pool.is_public %}Public{% else %}Private{% endif %}</span>
+                </span>
+              </p>
+
+              {% if pool_data.pool.description %}
+              <div class="content">
+                {{ pool_data.pool.description|truncatewords:20 }}
+              </div>
+              {% endif %}
+
+              <div class="tags">
+                <span class="tag is-light">
+                  <span class="icon">
+                    <i class="fas fa-users"></i>
+                  </span>
+                  <span>{{ pool_data.member_count }} member{{ pool_data.member_count|pluralize }}</span>
+                </span>
+                <span class="tag is-light">
+                  <span class="icon">
+                    <i class="fas fa-calendar-check"></i>
+                  </span>
+                  <span>
+                    {% if pool_data.pool.is_pool_active %}
+                    Ends {{ pool_data.pool.limit_date|date:"d M Y" }}
+                    {% else %}
+                    Ended {{ pool_data.pool.limit_date|date:"d M Y" }}
+                    {% endif %}
+                  </span>
+                </span>
+                {% if pool_data.pool.is_pool_active and pool_data.pool.days_remaining < 30 %}
+                <span class="tag is-warning is-light">
+                  <span class="icon">
+                    <i class="fas fa-clock"></i>
+                  </span>
+                  <span>{{ pool_data.pool.days_remaining }} day{{ pool_data.pool.days_remaining|pluralize }} left</span>
+                </span>
+                {% endif %}
+                <span class="tag is-primary is-light">
+                  <span class="icon">
+                    <i class="fas fa-trophy"></i>
+                  </span>
+                  <span>{% if pool_data.pool.scoring_mode == 'simple' %}Simple{% elif pool_data.pool.scoring_mode == 'distributed' %}Distributed{% endif %}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="notification is-info is-light">
+      <p class="has-text-centered">
+        <span class="icon is-large">
+          <i class="fas fa-inbox fa-2x"></i>
+        </span>
+      </p>
+      <p class="has-text-centered">
+        You haven't joined any pools yet. Join one using a pool code above or create your own!
+      </p>
+    </div>
+    {% endif %}
+
+
+    {# Join Pool Section #}
+    <div class="box mt-5">
+      <h2 class="subtitle">Join a Pool</h2>
+      <form id="joinPoolForm">
+        {% csrf_token %}
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input class="input" type="text" id="joinCode" name="slug" placeholder="Enter 5-character pool code (e.g., Ay7Lb)" maxlength="5" autocomplete="off" required>
+          </div>
+          <div class="control">
+            <button type="submit" class="button is-primary">
+              <span class="icon">
+                <i class="fas fa-sign-in-alt"></i>
+              </span>
+              <span>Join Pool</span>
+            </button>
+          </div>
+        </div>
+        <div id="joinError" class="help is-danger" style="display: none;"></div>
+      </form>
+    </div>
+
+    {# Create Pool Button #}
+    <div class="level mb-5">
+      <div class="level-left"></div>
+      <div class="level-right">
+        <div class="level-item">
+          <a href="{% url 'create_pool' %}" class="button is-success">
+            <span class="icon">
+              <i class="fas fa-plus"></i>
+            </span>
+            <span>Create New Pool</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('joinPoolForm');
+    const joinCodeInput = document.getElementById('joinCode');
+    const joinError = document.getElementById('joinError');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      joinError.style.display = 'none';
+
+      const slug = joinCodeInput.value.trim();
+
+      if (slug.length !== 5) {
+        joinError.textContent = 'Pool code must be exactly 5 characters';
+        joinError.style.display = 'block';
+        return;
+      }
+
+      try {
+        const data = await fetchWithCsrf(`/api/pools/${slug}/join/`, {
+          method: 'POST',
+        });
+
+        // Success - reload page to show new pool
+        showNotification(`Successfully joined pool!`, 'success');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
+      } catch (error) {
+        joinError.textContent = error.message || 'Failed to join pool';
+        joinError.style.display = 'block';
+      }
+    });
+  });
+</script>
+{% endblock %}

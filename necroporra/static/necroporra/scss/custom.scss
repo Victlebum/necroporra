@@ -1,0 +1,289 @@
+// Import Bulma's core
+@import "../../../../node_modules/bulma/bulma.scss";
+
+// ============================================================
+// HORROR THEME — Blood & Darkness
+// Palette:
+//   Void Black    hsl(0, 18%, 4%)   #0C0707  — page background
+//   Dark Pit      hsl(0, 18%, 7%)   #130B0B  — card surfaces
+//   Blood Red     hsl(0, 100%, 30%) #990000  — primary / CTAs
+//   Crimson       hsl(0, 85%, 48%)  #DD1C1C  — links
+//   Fresh Blood   hsl(0, 100%, 45%) #E60000  — danger
+//   Plague Green  hsl(120, 45%, 28%)#267A26  — success
+//   Bone Amber    hsl(45, 90%, 32%) #9A7700  — warning
+//   Occult Violet hsl(270, 100%, 40%)#6600CC — info
+//   Ashen Bone    70% lightness     #B3A9A9  — body text
+//   Pale Parchment 88% lightness    #DED4D4  — strong text
+// ============================================================
+:root {
+  // ── Scheme (background) ─────────────────────────────────
+  // Near-neutral dark base — red is reserved for deliberate accents only.
+  --bulma-scheme-h: 0;
+  --bulma-scheme-s: 5%;
+  --bulma-scheme-main-l: 4%;         // #0C0707 — the Void
+  --bulma-scheme-main-bis-l: 6%;     // slightly lighter Void
+  --bulma-scheme-main-ter-l: 8%;     // card hover backgrounds
+  --bulma-scheme-invert-l: 95%;      // near-white invert
+
+  // ── Text ────────────────────────────────────────────────
+  --bulma-text-h: 0;
+  --bulma-text-s: 12%;
+  --bulma-text-l: 70%;               // #B3A9A9 — ashen bone
+  --bulma-text-strong-l: 88%;        // #DED4D4 — pale parchment
+  --bulma-text-weak-l: 50%;          // muted / placeholder text
+
+  // ── Body ────────────────────────────────────────────────
+  --bulma-body-background-color: hsl(0, 5%, 4%);
+  --bulma-body-color:            hsl(0, 8%, 70%);
+  --bulma-body-size:             1rem;
+
+  // ── Primary — Blood Red ─────────────────────────────────
+  --bulma-primary-h: 0;
+  --bulma-primary-s: 100%;
+  --bulma-primary-l: 30%;            // #990000
+  --bulma-primary-invert-l: 95%;     // near-white text on buttons
+  --bulma-primary-light-l: 12%;
+  --bulma-primary-dark-l: 20%;
+  --bulma-primary-soft-l: 18%;
+  --bulma-primary-bold-l: 45%;
+
+  // ── Link — Crimson ──────────────────────────────────────
+  --bulma-link-h: 0;
+  --bulma-link-s: 85%;
+  --bulma-link-l: 58%;               // bright enough to read on dark bg
+  --bulma-link-invert-l: 95%;
+  --bulma-link-light-l: 15%;
+  --bulma-link-dark-l: 25%;
+  --bulma-link-soft-l: 20%;
+  --bulma-link-bold-l: 65%;
+
+  // ── Info — Occult Violet ─────────────────────────────────
+  --bulma-info-h: 270;
+  --bulma-info-s: 100%;
+  --bulma-info-l: 55%;               // readable violet
+  --bulma-info-invert-l: 95%;
+  --bulma-info-light-l: 15%;
+  --bulma-info-dark-l: 25%;
+  --bulma-info-soft-l: 18%;
+  --bulma-info-bold-l: 68%;
+
+  // ── Success — Plague Green ───────────────────────────────
+  --bulma-success-h: 120;
+  --bulma-success-s: 45%;
+  --bulma-success-l: 38%;            // #267A26, lifted for readability
+  --bulma-success-invert-l: 95%;
+  --bulma-success-light-l: 12%;
+  --bulma-success-dark-l: 20%;
+  --bulma-success-soft-l: 15%;
+  --bulma-success-bold-l: 50%;
+
+  // ── Warning — Bone Amber ─────────────────────────────────
+  --bulma-warning-h: 45;
+  --bulma-warning-s: 90%;
+  --bulma-warning-l: 42%;            // #9A7700, boosted for dark bg
+  --bulma-warning-invert-l: 5%;
+  --bulma-warning-light-l: 12%;
+  --bulma-warning-dark-l: 22%;
+  --bulma-warning-soft-l: 15%;
+  --bulma-warning-bold-l: 60%;
+
+  // ── Danger — Fresh Blood ─────────────────────────────────
+  --bulma-danger-h: 0;
+  --bulma-danger-s: 100%;
+  --bulma-danger-l: 52%;             // visually distinct from primary
+  --bulma-danger-invert-l: 95%;
+  --bulma-danger-light-l: 12%;
+  --bulma-danger-dark-l: 22%;
+  --bulma-danger-soft-l: 15%;
+  --bulma-danger-bold-l: 65%;
+
+  // ── Dark — redirected to horror-black instead of Bulma's blue-grey ──
+  // Fixes .is-dark on navbar, pool-code tags, buttons, etc.
+  --bulma-dark-h: 0;
+  --bulma-dark-s: 5%;                // near-neutral — no red tint
+  --bulma-dark-l: 10%;
+  --bulma-dark-invert-l: 85%;        // parchment text on dark surfaces
+  --bulma-dark-light-l: 6%;
+  --bulma-dark-dark-l: 5%;
+
+  // ── Borders & Shadows ────────────────────────────────────
+  --bulma-border-h: 0;
+  --bulma-border-s: 25%;
+  --bulma-border-l: 22%;             // visible on dark surfaces
+  --bulma-border-hover-l: 40%;
+  --bulma-border-light-l: 15%;
+  --bulma-shadow-l: 0%;
+
+  // ── Navbar ───────────────────────────────────────────────
+  --bulma-navbar-background-color: hsl(0, 5%, 8%);
+  --bulma-navbar-item-color:        hsl(0, 5%, 70%);
+  --bulma-navbar-item-hover-background-color: hsl(0, 100%, 16%); // blood-red hover: intentional
+  --bulma-navbar-item-hover-color:  hsl(0, 5%, 90%);
+
+  // ── Footer ───────────────────────────────────────────────
+  --bulma-footer-background-color:  hsl(0, 18%, 3%);
+  --bulma-footer-color:             hsl(0, 12%, 50%);
+  --bulma-footer-padding:           2rem 1.5rem;
+
+  // ── Box / Card — set at element level below ──────────────
+  // Bulma re-declares --bulma-box/card-background-color at component level,
+  // overriding :root. Actual overrides live in .box / .card below.
+
+  // ── Input / Control ──────────────────────────────────────
+  --bulma-input-background-color:   hsl(0, 18%, 6%);
+  --bulma-input-border-color:       hsl(0, 30%, 22%);
+  --bulma-input-color:              hsl(0, 12%, 80%);
+  --bulma-input-placeholder-color:  hsl(0, 12%, 40%);
+  --bulma-input-hover-border-color: hsl(0, 100%, 30%);
+  --bulma-input-focus-border-color: hsl(0, 100%, 40%);
+  --bulma-input-focus-shadow-size:  0 0 0 0.125em;
+  --bulma-input-focus-shadow-color: hsla(0, 100%, 30%, 0.35);
+}
+
+// Title & subtitle — pale parchment so headings pop
+.title   { color: hsl(0, 16%, 88%); }
+.subtitle { color: hsl(0, 12%, 64%); }
+
+// Custom styles for necroporra
+.celebrity-card {
+  transition: transform 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px hsla(0, 100%, 20%, 0.55),
+                0 0 0 1px hsl(0, 100%, 25%);
+  }
+}
+
+.celebrity-image-container {
+  width: 100%;
+  height: 200px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #161616;
+}
+
+.celebrity-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.celebrity-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1a0000 0%, #660000 50%, #330000 100%);
+  color: hsl(0, 12%, 70%);
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.prediction-status {
+  &.pending {
+    color: hsl(0, 12%, 45%);
+  }
+  
+  &.correct {
+    color: hsl(120, 45%, 48%);
+    font-weight: bold;
+  }
+  
+  &.wrong {
+    color: hsl(0, 100%, 55%);
+  }
+}
+
+.pool-card {
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px hsla(0, 100%, 18%, 0.5),
+                0 0 0 1px hsl(0, 100%, 22%);
+  }
+}
+
+// Modal animations
+.modal.is-active {
+  .modal-background {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .modal-card {
+    animation: slideDown 0.3s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+// Lighter page background so white cards/boxes stand out
+// Sticky footer: stretches main content to fill the viewport
+body {
+  background-color: var(--bulma-body-background-color);
+  color: var(--bulma-body-color);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+// ── Element-level surface overrides ──────────────────────────────────────────
+// Bulma 1.0 sets background vars on each component element, beating :root.
+// Use the same specificity (.class) after the Bulma import so we win.
+.box,
+.card {
+  // Near-neutral dark surface — slightly lighter than bg for contrast
+  --bulma-box-background-color:  hsl(0, 5%, 10%);
+  --bulma-card-background-color: hsl(0, 5%, 10%);
+  --bulma-box-shadow: 0 0 0 1px hsl(0, 8%, 18%),
+                      0 4px 16px hsla(0, 0%, 0%, 0.6);
+}
+
+.modal-card-body {
+  --bulma-modal-card-body-background-color: hsl(0, 5%, 10%);
+}
+
+.modal-card-head,
+.modal-card-foot {
+  background-color: hsl(0, 5%, 7%);
+  border-color: hsl(0, 8%, 16%);
+}
+
+// ── Mobile: center level items when stacked ──────────────────────────────────
+@media screen and (max-width: 768px) {
+  .level-left + .level-right,
+  .level-left,
+  .level-right {
+    justify-content: center;
+  }
+  .level-left .level-item,
+  .level-right .level-item {
+    text-align: center;
+  }
+}

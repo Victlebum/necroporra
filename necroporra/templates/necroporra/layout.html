@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>{% block title %}Necroporra{% endblock %}</title>
+
+  {# Favicon - downloaded from Flaticon: https://www.flaticon.com/free-icon/skull_983061/ #}
+  <link rel="icon" type="image/png" href="{% static 'necroporra/img/favicon.png' %}">
+
+  {# Bulma CSS #}
+  <link rel="stylesheet" href="{% static 'necroporra/css/styles.css' %}">
+
+  {# Font Awesome for icons #}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+  {# Notification container for JS notifications #}
+  <div id="notification-container" class="is-fixed" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;"></div>
+
+  {# Navbar #}
+  {% if user.is_authenticated %}
+  <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+    <div class="container">
+      <div class="navbar-brand">
+        <a class="navbar-item" href="{% url 'dashboard' %}">
+          <strong>Necroporra</strong>
+        </a>
+        <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
+      </div>
+
+      <div id="navbarMenu" class="navbar-menu">
+        <div class="navbar-start">
+          <a class="navbar-item" href="{% url 'dashboard' %}">
+            <span class="icon"><i class="fas fa-home"></i></span>
+            <span>Dashboard</span>
+          </a>
+          <a class="navbar-item" href="{% url 'create_pool' %}">
+            <span class="icon"><i class="fas fa-plus"></i></span>
+            <span>Create Pool</span>
+          </a>
+        </div>
+
+        <div class="navbar-end">
+          <a class="navbar-item" href="{% url 'user_settings' %}">
+            <span class="icon-text">
+              <span class="icon"><i class="fas fa-user"></i></span>
+              <span>{{ user.username }}</span>
+            </span>
+          </a>
+          <div class="navbar-item">
+            <div class="buttons">
+              <form method="post" action="{% url 'logout' %}" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" class="button is-light">
+                  <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
+                  <span>Logout</span>
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+  {% endif %}
+
+  {# Django Messages #}
+  {% block messages %}
+  {% if messages %}
+  <section class="section" style="padding-top: 1rem; padding-bottom: 0;">
+    <div class="container">
+      {% for message in messages %}
+      <div class="notification {% if message.tags %}is-{{ message.tags }}{% endif %}">
+        <button class="delete"></button>
+        {{ message }}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  {% endblock %}
+
+  {# Main Content #}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  {# Footer #}
+  <footer class="footer">
+    <div class="content has-text-centered">
+      <p>
+        <strong>Necroporra</strong> - Dead Pool Predictions
+      </p>
+    </div>
+  </footer>
+
+  {# Utility JavaScript #}
+  <script src="{% static 'necroporra/js/utils.js' %}"></script>
+
+  {# Navbar burger toggle #}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.navbar-burger').forEach(el => {
+        el.addEventListener('click', () => {
+          const target = document.getElementById(el.dataset.target);
+          el.classList.toggle('is-active');
+          target.classList.toggle('is-active');
+        });
+      });
+    });
+  </script>
+
+  {# Delete notifications on click #}
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Bind delete button for all notifications
+      (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+        const $notification = $delete.parentNode;
+        $delete.addEventListener('click', () => {
+          $notification.parentNode.removeChild($notification);
+        });
+      });
+    });
+  </script>
+
+  {% block extra_js %}{% endblock %}
+</body>
+
+</html>

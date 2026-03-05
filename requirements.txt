@@ -1,0 +1,4 @@
+Django==6.0.2
+requests==2.31.0
+python-dateutil
+django-stubs[compatible-mypy]
