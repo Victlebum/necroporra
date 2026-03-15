@@ -351,7 +351,7 @@ async function deletePick(predictionId, btn, originalBtnHtml) {
         // Remove the card from DOM
         if (card) card.remove();
 
-        showNotification(`Removed ${celebrityName} from your predictions`, 'success');
+        showNotification(`Removed ${celebrityName} from your predictions.`, 'success');
 
         // If no predictions remain, show the empty state
         const predictionsList = document.getElementById('predictionsList');

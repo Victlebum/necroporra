@@ -22,7 +22,7 @@
 
 <body>
   {# Notification container for JS notifications #}
-  <div id="notification-container" class="is-fixed" style="position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px;"></div>
+  <div id="notification-container" class="is-fixed" style="position: fixed; top: 20px; right: 20px; z-index: 9999; width: min(420px, calc(100vw - 2rem));"></div>
 
   {# Navbar #}
   {% if user.is_authenticated %}

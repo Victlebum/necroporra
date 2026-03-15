@@ -239,6 +239,24 @@
   }
 }
 
+// Notification layout fixes for JS-driven alerts.
+// Reserve space for the absolutely-positioned close button and keep long text readable.
+#notification-container {
+  width: min(420px, calc(100vw - 2rem));
+}
+
+#notification-container .notification {
+  margin-bottom: 0.75rem;
+  padding-right: 3rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#notification-container .notification span {
+  display: block;
+  line-height: 1.4;
+}
+
 // Lighter page background so white cards/boxes stand out
 // Sticky footer: stretches main content to fill the viewport
 body {

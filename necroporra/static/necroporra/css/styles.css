@@ -22785,6 +22785,22 @@ has-background-danger.is-hoverable:active {
     opacity: 1;
   }
 }
+#notification-container {
+  width: min(420px, 100vw - 2rem);
+}
+
+#notification-container .notification {
+  margin-bottom: 0.75rem;
+  padding-right: 3rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+#notification-container .notification span {
+  display: block;
+  line-height: 1.4;
+}
+
 body {
   background-color: var(--bulma-body-background-color);
   color: var(--bulma-body-color);
