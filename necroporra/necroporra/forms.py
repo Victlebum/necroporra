@@ -191,9 +191,11 @@ class CreatePoolForm(forms.ModelForm):
 class ChangePasswordForm(PasswordChangeForm):
     """Password change form with Bulma styling."""
 
+    PASSWORD_FIELDS = ('old_password', 'new_password1', 'new_password2')
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        for field_name in ('old_password', 'new_password1', 'new_password2'):
-            self.fields[field_name].widget.attrs.update({
-                'class': 'input',
-            })
+        for field_name in self.PASSWORD_FIELDS:
+            attrs = self.fields[field_name].widget.attrs
+            attrs['class'] = 'input'
+            attrs.pop('autofocus', None)
