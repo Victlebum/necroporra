@@ -62,7 +62,7 @@ function showConfirmModal(celebrity) {
     
     // Add bet input for distributed scoring mode
     let weightInput = '';
-    if (typeof POOL_SCORING_MODE !== 'undefined' && POOL_SCORING_MODE === 'distributed') {
+    if (POOL_SCORING_MODE === 'distributed') {
         const maxWeight = typeof REMAINING_WEIGHT !== 'undefined' ? REMAINING_WEIGHT : 10;
         weightInput = `
             <div class="field mt-4">

@@ -85,17 +85,17 @@ function showNotification(message, type = 'info') {
   notification.className = `notification is-${type}`;
   notification.innerHTML = `
     <button class="delete"></button>
-    ${message}
+    <span>${message}</span>
   `;
   
   const container = document.getElementById('notification-container');
   if (container) {
     container.appendChild(notification);
     
-    // Auto-remove after 5 seconds
+    // Auto-remove after 7 seconds
     setTimeout(() => {
       notification.remove();
-    }, 5000);
+    }, 7000);
     
     // Remove on click
     notification.querySelector('.delete').addEventListener('click', () => {

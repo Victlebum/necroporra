@@ -300,21 +300,36 @@ def add_celebrity_to_pool_api(request, slug):
 
     celebrity_id = data.get('celebrity_id')
     wikidata_id = data.get('wikidata_id')
-    weight = data.get('weight', 1)
-    
+
+    # In distributed pools, weight is required and must be valid.
+    is_distributed = pool.scoring_mode == 'distributed'
+    if is_distributed and 'weight' not in data:
+        return JsonResponse(
+            {'detail': 'Weight is required for distributed scoring pools'},
+            status=400
+        )
+
+    raw_weight = data.get('weight', 1)
+
     # Validate weight
     try:
-        weight = int(weight)
-        if weight < 1 or weight > 10:
+        weight = int(raw_weight)
+    except (ValueError, TypeError):
+        if is_distributed:
             return JsonResponse(
-                {'detail': 'Weight must be between 1 and 10'},
+                {'detail': 'Weight must be a valid integer between 1 and 10'},
                 status=400
             )
-    except (ValueError, TypeError):
         weight = 1
+
+    if weight < 1 or weight > 10:
+        return JsonResponse(
+            {'detail': 'Weight must be between 1 and 10'},
+            status=400
+        )
     
     # Check total weight for distributed scoring
-    if pool.scoring_mode == 'distributed':
+    if is_distributed:
         total_weight = Prediction.objects.filter(
             pool=pool,
             user=request.user

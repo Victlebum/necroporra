@@ -13,9 +13,7 @@ function initCelebritySearch(poolSlug, poolId) {
     currentPoolSlug = poolSlug;
     
     // Get pool settings from global variables
-    if (typeof POOL_SCORING_MODE !== 'undefined') {
-        poolScoringMode = POOL_SCORING_MODE;
-    }
+    poolScoringMode = POOL_SCORING_MODE;
     if (typeof REMAINING_PREDICTIONS !== 'undefined') {
         remainingPredictions = REMAINING_PREDICTIONS;
     }
@@ -203,25 +201,39 @@ async function confirmPickCelebrity() {
     let weight = 1;
     if (poolScoringMode === 'distributed') {
         const weightInput = document.getElementById('predictionWeight');
-        if (weightInput) {
-            weight = parseInt(weightInput.value) || 1;
-            
-            // Validate weight
-            if (weight < 1 || weight > 10) {
-                showNotification('Weight must be between 1 and 10', 'danger');
-                confirmBtn.innerHTML = originalBtnHtml;
-                confirmBtn.classList.remove('is-loading');
-                confirmBtn.disabled = false;
-                return;
-            }
-            
-            if (weight > remainingWeight) {
-                showNotification(`You only have ${remainingWeight} weight points remaining`, 'danger');
-                confirmBtn.innerHTML = originalBtnHtml;
-                confirmBtn.classList.remove('is-loading');
-                confirmBtn.disabled = false;
-                return;
-            }
+        if (!weightInput) {
+            showNotification('Could not find bet input for distributed scoring. Please reload and try again.', 'danger');
+            confirmBtn.innerHTML = originalBtnHtml;
+            confirmBtn.classList.remove('is-loading');
+            confirmBtn.disabled = false;
+            return;
+        }
+
+        weight = parseInt(weightInput.value, 10);
+
+        if (Number.isNaN(weight)) {
+            showNotification('Please enter a valid bet value', 'danger');
+            confirmBtn.innerHTML = originalBtnHtml;
+            confirmBtn.classList.remove('is-loading');
+            confirmBtn.disabled = false;
+            return;
+        }
+
+        // Validate weight
+        if (weight < 1 || weight > 10) {
+            showNotification('Weight must be between 1 and 10', 'danger');
+            confirmBtn.innerHTML = originalBtnHtml;
+            confirmBtn.classList.remove('is-loading');
+            confirmBtn.disabled = false;
+            return;
+        }
+
+        if (weight > remainingWeight) {
+            showNotification(`You only have ${remainingWeight} weight points remaining`, 'danger');
+            confirmBtn.innerHTML = originalBtnHtml;
+            confirmBtn.classList.remove('is-loading');
+            confirmBtn.disabled = false;
+            return;
         }
     }
     

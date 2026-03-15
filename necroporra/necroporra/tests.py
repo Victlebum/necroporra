@@ -496,6 +496,102 @@ class IntegrationTest(TestCase):
         self.assertEqual(prediction.pool, pool)
 
 
+class AddCelebrityApiWeightValidationTest(TestCase):
+    """Regression tests for distributed weight handling in add_celebrity API."""
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(username='weightuser', password='testpass123')
+        self.client.login(username='weightuser', password='testpass123')
+
+        self.distributed_pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Distributed Pool',
+            slug='DIST1',
+            limit_date=timezone.now() + timedelta(days=365),
+            scoring_mode='distributed',
+            max_predictions_per_user=10,
+        )
+        PoolMembership.objects.create(pool=self.distributed_pool, user=self.user)
+
+        self.simple_pool = Pool.objects.create(
+            creator=self.user,
+            admin=self.user,
+            name='Simple Pool',
+            slug='SIMP1',
+            limit_date=timezone.now() + timedelta(days=365),
+            scoring_mode='simple',
+            max_predictions_per_user=10,
+        )
+        PoolMembership.objects.create(pool=self.simple_pool, user=self.user)
+
+        self.celebrity = Celebrity.objects.create(
+            name='Weight Test Celebrity',
+            wikidata_id='QWEIGHT1',
+        )
+
+    def test_distributed_requires_weight(self):
+        """Distributed pool requests without weight should fail."""
+        response = self.client.post(
+            reverse('api_add_celebrity', args=[self.distributed_pool.slug]),
+            data=json.dumps({'celebrity_id': self.celebrity.id}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Weight is required', response.json()['detail'])
+        self.assertFalse(
+            Prediction.objects.filter(pool=self.distributed_pool, user=self.user, celebrity=self.celebrity).exists()
+        )
+
+    def test_distributed_rejects_invalid_weight(self):
+        """Distributed pool should reject non-integer weight values."""
+        response = self.client.post(
+            reverse('api_add_celebrity', args=[self.distributed_pool.slug]),
+            data=json.dumps({'celebrity_id': self.celebrity.id, 'weight': 'abc'}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('valid integer', response.json()['detail'])
+        self.assertFalse(
+            Prediction.objects.filter(pool=self.distributed_pool, user=self.user, celebrity=self.celebrity).exists()
+        )
+
+    def test_distributed_accepts_valid_weight(self):
+        """Distributed pool should persist explicit valid weight."""
+        response = self.client.post(
+            reverse('api_add_celebrity', args=[self.distributed_pool.slug]),
+            data=json.dumps({'celebrity_id': self.celebrity.id, 'weight': 4}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        prediction = Prediction.objects.get(
+            pool=self.distributed_pool,
+            user=self.user,
+            celebrity=self.celebrity,
+        )
+        self.assertEqual(prediction.weight, 4)
+
+    def test_simple_pool_allows_missing_weight_with_default(self):
+        """Simple pool keeps legacy behavior: missing weight defaults to 1."""
+        response = self.client.post(
+            reverse('api_add_celebrity', args=[self.simple_pool.slug]),
+            data=json.dumps({'celebrity_id': self.celebrity.id}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 201)
+        prediction = Prediction.objects.get(
+            pool=self.simple_pool,
+            user=self.user,
+            celebrity=self.celebrity,
+        )
+        self.assertEqual(prediction.weight, 1)
+
+
 class UserDeletionCascadeTest(TestCase):
     """Test that deleting a user cascades correctly through pools, memberships, and predictions."""
 
