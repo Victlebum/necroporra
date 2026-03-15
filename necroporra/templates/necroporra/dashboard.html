@@ -21,7 +21,7 @@
                 <span class="tag {% if pool_data.pool.is_pool_active %}is-success{% else %}is-danger{% endif %}">
                   {% if pool_data.pool.is_pool_active %}Active{% else %}Ended{% endif %}
                 </span>
-                <span class="tag {% if pool_data.pool.is_public %}is-light{% else %}is-warning{% endif %}">
+                <span class="tag {% if pool_data.pool.is_public %}is-white{% else %}is-warning{% endif %}">
                   <i class="fas fa-{% if pool_data.pool.is_public %}globe{% else %}lock{% endif %}"></i>
                   <span class="ml-1">{% if pool_data.pool.is_public %}Public{% else %}Private{% endif %}</span>
                 </span>
@@ -34,13 +34,13 @@
               {% endif %}
 
               <div class="tags">
-                <span class="tag is-light">
+                <span class="tag is-white">
                   <span class="icon">
                     <i class="fas fa-users"></i>
                   </span>
                   <span>{{ pool_data.member_count }} member{{ pool_data.member_count|pluralize }}</span>
                 </span>
-                <span class="tag is-light">
+                <span class="tag is-white">
                   <span class="icon">
                     <i class="fas fa-calendar-check"></i>
                   </span>
@@ -53,7 +53,7 @@
                   </span>
                 </span>
                 {% if pool_data.pool.is_pool_active and pool_data.pool.days_remaining < 30 %}
-                <span class="tag is-warning is-light">
+                <span class="tag is-warning is-white">
                   <span class="icon">
                     <i class="fas fa-clock"></i>
                   </span>
@@ -74,7 +74,7 @@
       {% endfor %}
     </div>
     {% else %}
-    <div class="notification is-info is-light">
+    <div class="notification is-info is-white">
       <p class="has-text-centered">
         <span class="icon is-large">
           <i class="fas fa-inbox fa-2x"></i>
