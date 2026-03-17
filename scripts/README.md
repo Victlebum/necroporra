@@ -10,7 +10,7 @@ A standalone testing script for manually exploring and debugging Wikidata API qu
 
 **Usage:**
 ```bash
-cd /home/victlebum/Code/necroporra
+cd /path/to/necroporra/django
 source .venv/bin/activate
 python scripts/test_wikidata.py
 ```
