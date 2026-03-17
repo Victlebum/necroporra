@@ -1,5 +1,5 @@
 // Import Bulma's core
-@import "../../../../node_modules/bulma/bulma.scss";
+@use "bulma/bulma" as *;
 
 // ============================================================
 // HORROR THEME — Blood & Darkness
