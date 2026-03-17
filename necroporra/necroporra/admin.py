@@ -114,7 +114,7 @@ class PoolAdmin(admin.ModelAdmin):
     )
     list_filter = ("scoring_mode", "is_public", "timeframe_choice", PoolActiveFilter)
     search_fields = ("name", "slug", "admin__username", "creator__username")
-    readonly_fields = ("slug", "created_at", "updated_at", "limit_date", "picks_visibility_date")
+    readonly_fields = ("slug", "created_at", "updated_at", "limit_date", "lock_date")
     raw_id_fields = ("creator", "admin")
     date_hierarchy = "created_at"
     list_per_page = 25
@@ -132,8 +132,8 @@ class PoolAdmin(admin.ModelAdmin):
         ("Scoring & Limits", {
             "fields": ("scoring_mode", "max_predictions_per_user"),
         }),
-        ("Visibility", {
-            "fields": ("is_public", "picks_visible", "picks_visible_after_days", "picks_visibility_date"),
+        ("Locking", {
+            "fields": ("is_public", "is_locked", "lock_after_days", "lock_date"),
         }),
         ("Timestamps", {
             "fields": ("created_at", "updated_at"),

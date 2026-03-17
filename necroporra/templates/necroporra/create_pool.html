@@ -82,28 +82,14 @@
             </div>
 
             <div class="field">
-              <label class="label">Pick Visibility</label>
-              <div class="field">
-                <label class="checkbox">
-                  {{ form.picks_visible_from_start }}
-                  Picks visible immediately
-                </label>
-                {% if form.picks_visible_from_start.errors %}
-                <p class="help is-danger">{{ form.picks_visible_from_start.errors.0 }}</p>
-                {% endif %}
-                <p class="help">{{ form.picks_visible_from_start.help_text }}</p>
+              <label class="label">Pool Lock</label>
+              <div class="control">
+                {{ form.lock_after_days }}
               </div>
-
-              <div class="field" id="picks_delay_field">
-                <label class="label">Or make picks visible after (days)</label>
-                <div class="control">
-                  {{ form.picks_visible_after_days }}
-                </div>
-                {% if form.picks_visible_after_days.errors %}
-                <p class="help is-danger">{{ form.picks_visible_after_days.errors.0 }}</p>
-                {% endif %}
-                <p class="help">Enter 0-7 days (once visible, picks stay visible permanently)</p>
-              </div>
+              {% if form.lock_after_days.errors %}
+              <p class="help is-danger">{{ form.lock_after_days.errors.0 }}</p>
+              {% endif %}
+              <p class="help">New pools start unlocked. Enter 1-7 days before the pool locks permanently. While unlocked, players can edit picks but cannot see each other's picks. Once locked, picks become visible and editing is disabled. Lock timing must leave at least one full active day before pool end.</p>
             </div>
 
             <div class="field">
@@ -152,25 +138,4 @@
   </div>
 </section>
 
-<script>
-  // Toggle picks_visible_after_days field based on picks_visible_from_start checkbox
-  document.addEventListener('DOMContentLoaded', function () {
-    const picksVisibleCheckbox = document.getElementById('id_picks_visible_from_start');
-    const picksDelayField = document.getElementById('picks_delay_field');
-    const picksDelayInput = document.getElementById('id_picks_visible_after_days');
-
-    function toggleDelayField() {
-      if (picksVisibleCheckbox.checked) {
-        picksDelayField.style.display = 'none';
-        picksDelayInput.disabled = true;
-      } else {
-        picksDelayField.style.display = 'block';
-        picksDelayInput.disabled = false;
-      }
-    }
-
-    toggleDelayField();
-    picksVisibleCheckbox.addEventListener('change', toggleDelayField);
-  });
-</script>
 {% endblock %}

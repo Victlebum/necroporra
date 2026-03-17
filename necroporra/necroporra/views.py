@@ -97,29 +97,19 @@ def create_pool_view(request):
             pool = form.save(commit=False)
             pool.creator = request.user
             pool.slug = Pool.generate_slug()
+            now = timezone.now()
             
             # Calculate limit_date based on timeframe_choice
             pool.limit_date = Pool.calculate_limit_date(
                 pool.timeframe_choice,
-                timezone.now()
+                now
             )
             
-            # Handle pick visibility settings
-            picks_visible_from_start = form.cleaned_data.get('picks_visible_from_start', False)
-            picks_visible_after_days = form.cleaned_data.get('picks_visible_after_days')
-            
-            if picks_visible_from_start:
-                pool.picks_visible = True
-                pool.picks_visible_after_days = None
-                pool.picks_visibility_date = None
-            else:
-                pool.picks_visible = False
-                pool.picks_visible_after_days = picks_visible_after_days
-                # Calculate visibility date manually since pool.created_at is not set yet
-                if picks_visible_after_days is not None:
-                    pool.picks_visibility_date = timezone.now() + timedelta(days=picks_visible_after_days)
-                else:
-                    pool.picks_visibility_date = None
+            # New pools start unlocked, then lock after N days.
+            lock_after_days = form.cleaned_data.get('lock_after_days')
+            pool.is_locked = False
+            pool.lock_after_days = lock_after_days
+            pool.lock_date = now + timedelta(days=lock_after_days)
             
             pool.admin = request.user
             pool.save()
@@ -162,12 +152,12 @@ def pool_detail_view(request, slug):
     else:
         leaderboard = pool.memberships.all().order_by('-wins')
     
-    # Determine what predictions to show based on visibility settings
-    if pool.picks_visible:
-        # Show all predictions if picks are visible
+    # Determine what predictions to show based on lock state.
+    if pool.picks_publicly_visible():
+        # Locked pools show all predictions.
         all_predictions = Prediction.objects.filter(pool=pool).select_related('celebrity', 'user')
     else:
-        # Only show current user's predictions if picks are hidden
+        # Unlocked pools hide other members' predictions.
         all_predictions = Prediction.objects.filter(pool=pool, user=request.user).select_related('celebrity')
     
     # Get user's predictions
@@ -276,6 +266,12 @@ def add_celebrity_to_pool_api(request, slug):
     if not pool.is_pool_active():
         return JsonResponse(
             {'detail': 'This pool has ended and is no longer accepting predictions'},
+            status=400
+        )
+
+    if pool.is_locked:
+        return JsonResponse(
+            {'detail': 'This pool is locked. You can no longer add predictions.'},
             status=400
         )
     
@@ -460,10 +456,10 @@ def get_user_picks_api(request, slug):
             status=403
         )
     
-    # Check if picks are visible
-    if not pool.picks_visible:
+    # Check if picks are visible (only when locked).
+    if not pool.picks_publicly_visible():
         return JsonResponse(
-            {'detail': 'Picks are not yet visible for this pool'},
+            {'detail': 'Picks are not visible until this pool locks.'},
             status=403
         )
     
@@ -524,6 +520,13 @@ def get_user_picks_api(request, slug):
 def delete_prediction_api(request, slug, prediction_id):
     """Delete a user's own prediction from a pool."""
     pool = get_object_or_404(Pool, slug=slug)
+
+    if pool.is_locked:
+        return JsonResponse(
+            {'detail': 'This pool is locked. You can no longer edit predictions.'},
+            status=400
+        )
+
     prediction = get_object_or_404(Prediction, id=prediction_id, pool=pool, user=request.user)
 
     celebrity = prediction.celebrity
@@ -746,21 +749,21 @@ def delete_pool_api(request, slug):
 
 @require_http_methods(["POST"])
 @login_required
-def reveal_picks_api(request, slug):
-    """Make all picks permanently visible (admin only)."""
+def lock_pool_api(request, slug):
+    """Lock a pool immediately (admin only)."""
     pool = get_object_or_404(Pool, slug=slug)
 
     if request.user != pool.admin:
         return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
 
-    if pool.picks_visible:
-        return JsonResponse({'detail': 'Picks are already visible.'}, status=400)
+    if pool.is_locked:
+        return JsonResponse({'detail': 'Pool is already locked.'}, status=400)
 
-    pool.picks_visible = True
-    pool.picks_visibility_date = timezone.now()
-    pool.save(update_fields=['picks_visible', 'picks_visibility_date'])
+    pool.is_locked = True
+    pool.lock_date = timezone.now()
+    pool.save(update_fields=['is_locked', 'lock_date'])
 
-    return JsonResponse({'detail': 'Picks are now visible to all members.'})
+    return JsonResponse({'detail': 'Pool locked. Picks are now visible and prediction edits are closed.'})
 
 
 # ========== User Settings ==========

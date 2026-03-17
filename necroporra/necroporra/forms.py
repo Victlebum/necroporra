@@ -1,10 +1,13 @@
 """
 Django forms for necroporra
 """
+from datetime import timedelta
+
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from .models import Pool
 
 
@@ -118,23 +121,15 @@ class CreatePoolForm(forms.ModelForm):
         })
     )
     
-    picks_visible_from_start = forms.BooleanField(
-        label='Picks visible immediately',
-        initial=False,
-        required=False,
-        help_text='If checked, everyone can see all picks from the start',
-        widget=forms.CheckboxInput(attrs={'class': 'checkbox', 'id': 'id_picks_visible_from_start'})
-    )
-    
-    picks_visible_after_days = forms.IntegerField(
-        label='Or make picks visible after (days)',
+    lock_after_days = forms.IntegerField(
+        label='Lock pool after (days)',
         initial=7,
-        required=False,
+        required=True,
         widget=forms.NumberInput(attrs={
             'class': 'input',
-            'min': '0',
+            'min': '1',
             'max': '7',
-            'id': 'id_picks_visible_after_days',
+            'id': 'id_lock_after_days',
         })
     )
     
@@ -172,18 +167,25 @@ class CreatePoolForm(forms.ModelForm):
     def clean(self):
         """Validate form fields."""
         cleaned_data = super().clean()
-        picks_visible_from_start = cleaned_data.get('picks_visible_from_start')
-        picks_visible_after_days = cleaned_data.get('picks_visible_after_days')
-        
-        # If not visible from start, picks_visible_after_days is required
-        if not picks_visible_from_start and picks_visible_after_days is None:
-            self.add_error('picks_visible_after_days', 
-                          'Please specify when picks should become visible (0-7 days)')
-        
-        # Validate picks_visible_after_days range
-        if picks_visible_after_days is not None and (picks_visible_after_days < 0 or picks_visible_after_days > 7):
-            self.add_error('picks_visible_after_days', 
-                          'Days must be between 0 and 7')
+        timeframe_choice = cleaned_data.get('timeframe_choice')
+        lock_after_days = cleaned_data.get('lock_after_days')
+
+        if lock_after_days is None:
+            self.add_error('lock_after_days', 'Please specify when the pool should lock (1-7 days)')
+        elif lock_after_days < 1 or lock_after_days > 7:
+            self.add_error('lock_after_days', 'Days must be between 1 and 7')
+
+        if timeframe_choice and lock_after_days is not None and not self.errors:
+            now = timezone.now()
+            projected_limit_date = Pool.calculate_limit_date(timeframe_choice, now)
+            projected_lock_date = now + timedelta(days=lock_after_days)
+
+            if projected_limit_date - projected_lock_date < timedelta(days=1):
+                self.add_error(
+                    None,
+                    'Pool lock timing must leave at least one full active day before the pool ends. '
+                    'Choose a longer duration or fewer lock days.'
+                )
         
         return cleaned_data
 

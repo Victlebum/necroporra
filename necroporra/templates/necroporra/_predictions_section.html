@@ -7,13 +7,26 @@
   </div>
   <div class="level-right">
     <div class="level-item">
+      {% if pool.is_locked %}
+      <button class="button is-light" disabled>
+        <span class="icon"><i class="fas fa-lock"></i></span>
+        <span>Predictions Locked</span>
+      </button>
+      {% else %}
       <button id="addPredictionBtn" class="button is-primary">
         <span class="icon"><i class="fas fa-plus"></i></span>
         <span>Add Prediction</span>
       </button>
+      {% endif %}
     </div>
   </div>
 </div>
+
+{% if pool.is_locked %}
+<div class="notification is-warning is-light">
+  <p>This pool is locked. Picks are visible to everyone and prediction edits are disabled.</p>
+</div>
+{% endif %}
 
 {# Search Form (hidden by default) #}
 <div id="searchForm" style="display: none;">
@@ -86,6 +99,7 @@
           </div>
         </div>
         <footer class="card-footer">
+          {% if not pool.is_locked %}
           <a class="card-footer-item has-text-danger delete-pick-btn"
              data-prediction-id="{{ prediction.id }}"
              data-celebrity-name="{{ prediction.celebrity.name }}"
@@ -93,6 +107,7 @@
             <span class="icon is-small"><i class="fas fa-trash"></i></span>
             <span>Delete</span>
           </a>
+          {% endif %}
         </footer>
       </div>
     </div>

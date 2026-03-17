@@ -8,6 +8,7 @@ let selectedCelebrity = null;
 let poolScoringMode = 'simple';
 let remainingPredictions = 10;
 let remainingWeight = 10;
+let poolIsLocked = false;
 
 function initCelebritySearch(poolSlug, poolId) {
     currentPoolSlug = poolSlug;
@@ -20,6 +21,9 @@ function initCelebritySearch(poolSlug, poolId) {
     if (typeof REMAINING_WEIGHT !== 'undefined') {
         remainingWeight = REMAINING_WEIGHT;
     }
+    if (typeof POOL_IS_LOCKED !== 'undefined') {
+        poolIsLocked = !!POOL_IS_LOCKED;
+    }
     
     const addBtn = document.getElementById('addPredictionBtn');
     const cancelBtn = document.getElementById('cancelSearchBtn');
@@ -27,8 +31,17 @@ function initCelebritySearch(poolSlug, poolId) {
     const searchFormContainer = document.getElementById('searchForm');
     const predictionsListContainer = document.getElementById('predictionsList');
     
+    if (!addBtn || !cancelBtn || !searchForm || !searchFormContainer || !predictionsListContainer) {
+        initDeleteButtons();
+        return;
+    }
+
     // Show search form
     addBtn.addEventListener('click', () => {
+        if (poolIsLocked) {
+            showNotification('This pool is locked. You can no longer add predictions.', 'warning');
+            return;
+        }
         if (remainingPredictions <= 0) {
             showNotification('You have reached the maximum number of predictions for this pool', 'warning');
             return;
@@ -329,6 +342,13 @@ function initDeleteButtons() {
 }
 
 async function deletePick(predictionId, btn, originalBtnHtml) {
+    if (poolIsLocked) {
+        showNotification('This pool is locked. You can no longer edit predictions.', 'warning');
+        btn.innerHTML = originalBtnHtml;
+        btn.dataset.confirming = 'false';
+        return;
+    }
+
     const celebrityName = btn.getAttribute('data-celebrity-name') || 'pick';
     const card = btn.closest('.column');
 

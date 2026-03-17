@@ -85,21 +85,21 @@ class Pool(models.Model):
         help_text="Maximum number of predictions each user can make"
     )
     
-    # Pick visibility settings
-    picks_visible = models.BooleanField(
+    # Pool lock settings
+    is_locked = models.BooleanField(
         default=False,
-        help_text="Whether users can see each other's predictions"
+        help_text="Whether this pool is locked (picks are visible and predictions are frozen)"
     )
-    picks_visible_after_days = models.IntegerField(
+    lock_after_days = models.IntegerField(
         null=True,
         blank=True,
-        validators=[MinValueValidator(0), MaxValueValidator(7)],
-        help_text="Days after pool creation when picks become visible (0-7, null if visible from start)"
+        validators=[MinValueValidator(1), MaxValueValidator(7)],
+        help_text="Days after pool creation when the pool locks (1-7)"
     )
-    picks_visibility_date = models.DateTimeField(
+    lock_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="The date when picks will become visible"
+        help_text="The date when the pool will lock"
     )
     
     # Scoring mode
@@ -147,11 +147,19 @@ class Pool(models.Model):
             # Default to 1 year
             return start_date + relativedelta(years=1)
     
-    def calculate_visibility_date(self):
-        """Calculate when picks will become visible."""
-        if self.picks_visible or self.picks_visible_after_days is None:
+    def calculate_lock_date(self):
+        """Calculate when the pool should lock."""
+        if self.is_locked or self.lock_after_days is None:
             return None
-        return self.created_at + timedelta(days=self.picks_visible_after_days)
+        return self.created_at + timedelta(days=self.lock_after_days)
+
+    def picks_publicly_visible(self):
+        """Picks are visible to all members only after the pool locks."""
+        return self.is_locked
+
+    def predictions_editable(self):
+        """Predictions can only be edited while the pool is unlocked."""
+        return not self.is_locked
     
     def is_pool_active(self):
         """Check if the pool is still active based on limit_date."""

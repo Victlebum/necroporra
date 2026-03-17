@@ -66,11 +66,11 @@
         </div>
         <div class="column is-narrow">
           <div class="tags has-addons">
-            <span class="tag is-dark">Picks</span>
-            {% if pool.picks_visible %}
-              <span class="tag is-success">Visible</span>
+            <span class="tag is-dark">Pool</span>
+            {% if pool.is_locked %}
+              <span class="tag is-danger">Locked</span>
             {% else %}
-              <span class="tag is-warning">Hidden</span>
+              <span class="tag is-success">Unlocked</span>
             {% endif %}
           </div>
         </div>
@@ -269,25 +269,25 @@
 
       <div class="columns is-multiline">
 
-        {# Reveal Picks #}
-        {% if not pool.picks_visible %}
+        {# Lock Pool #}
+        {% if not pool.is_locked %}
         <div class="column is-full">
           <div class="level">
             <div class="level-left">
               <div class="level-item">
                 <div>
-                  <p class="has-text-weight-semibold">Reveal all picks now</p>
+                  <p class="has-text-weight-semibold">Lock pool now</p>
                   <p class="is-size-7 has-text-grey">
-                    Makes everyone's predictions visible immediately and permanently. This cannot be undone.
+                    Locks the pool immediately. Picks become visible to all members and prediction edits are disabled permanently.
                   </p>
                 </div>
               </div>
             </div>
             <div class="level-right">
               <div class="level-item">
-                <button class="button is-warning" id="btn-reveal-picks" onclick="revealPicks()">
-                  <span class="icon"><i class="fas fa-eye"></i></span>
-                  <span>Reveal Picks</span>
+                <button class="button is-warning" id="btn-lock-pool" onclick="lockPoolNow()">
+                  <span class="icon"><i class="fas fa-lock"></i></span>
+                  <span>Lock Pool</span>
                 </button>
               </div>
             </div>
@@ -415,21 +415,21 @@ async function doRemoveMember(userId, username) {
   }
 }
 
-// ── Reveal picks ───────────────────────────────────────────────
-function revealPicks() {
+// ── Lock pool ──────────────────────────────────────────────────
+function lockPoolNow() {
   openModal(
-    'Reveal All Picks',
-    "Make everyone's predictions visible immediately? This cannot be undone.",
-    doRevealPicks,
+    'Lock Pool Now',
+    "Lock this pool now? Picks will become visible and prediction edits will be permanently disabled.",
+    doLockPoolNow,
     'is-warning'
   );
 }
 
-async function doRevealPicks() {
-  const btn = document.getElementById('btn-reveal-picks');
+async function doLockPoolNow() {
+  const btn = document.getElementById('btn-lock-pool');
   if (btn) btn.classList.add('is-loading');
   try {
-    const data = await fetchWithCsrf(`/api/pools/${SLUG}/reveal-picks/`, {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/lock-now/`, {
       method: 'POST',
     });
     showNotification(data.detail, 'success');

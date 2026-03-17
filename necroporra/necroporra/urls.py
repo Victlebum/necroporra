@@ -35,7 +35,7 @@ urlpatterns = [
     path('api/pools/<str:slug>/transfer-admin/', views.transfer_admin_api, name='api_transfer_admin'),
     path('api/pools/<str:slug>/remove-member/', views.remove_member_api, name='api_remove_member'),
     path('api/pools/<str:slug>/delete/', views.delete_pool_api, name='api_delete_pool'),
-    path('api/pools/<str:slug>/reveal-picks/', views.reveal_picks_api, name='api_reveal_picks'),
+    path('api/pools/<str:slug>/lock-now/', views.lock_pool_api, name='api_lock_pool'),
     path('api/pools/<str:slug>/mark-dead/', views.mark_celebrity_dead_api, name='api_mark_dead'),
 
     # User settings API

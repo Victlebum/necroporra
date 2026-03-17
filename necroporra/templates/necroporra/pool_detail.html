@@ -99,8 +99,8 @@
       </div>
     </div>
 
-    {# Leaderboard Section - Only visible when picks are visible #}
-    {% if pool.picks_visible %}
+    {# Leaderboard Section - Only visible when pool is locked #}
+    {% if pool.is_locked %}
     <div class="box mb-5">
       <h2 class="title is-4">
         <span class="icon-text">
@@ -169,8 +169,8 @@
     </div>
     {% endif %}
 
-    {# Two-column layout when picks are NOT visible: Pool Members (left) + Your Predictions (right) #}
-    {% if not pool.picks_visible %}
+    {# Two-column layout while pool is unlocked: members + your private predictions #}
+    {% if not pool.is_locked %}
     <div class="columns">
       {# Pool Members Section - Left Column (1/3 width) #}
       <div class="column is-4">
@@ -212,8 +212,8 @@
     </div>
     {% endif %}
 
-    {# Your Predictions Section - Full width when picks ARE visible #}
-    {% if pool.picks_visible %}
+    {# Your Predictions Section - Full width when pool is locked #}
+    {% if pool.is_locked %}
     <div class="box">
       {% include "necroporra/_predictions_section.html" %}
     </div>
@@ -256,19 +256,20 @@
   const POOL_SCORING_MODE = '{{ pool.scoring_mode }}';
   const REMAINING_PREDICTIONS = {{ remaining_predictions }};
   const REMAINING_WEIGHT = {{ remaining_weight }};
+  const POOL_IS_LOCKED = {{ pool.is_locked|yesno:"true,false" }};
   const DELETE_PREDICTION_BASE_URL = '/api/pools/{{ pool.slug }}/predictions/';
 
   document.addEventListener('DOMContentLoaded', () => {
     initCelebritySearch(POOL_SLUG, POOL_ID);
     initModal();
     
-    // Load picks inline if picks are visible
-    {% if pool.picks_visible %}
+    // Load picks inline once pool is locked.
+    {% if pool.is_locked %}
     loadAllUserPicks();
     {% endif %}
   });
 
-  {% if pool.picks_visible %}
+  {% if pool.is_locked %}
   // Load picks for all users inline
   async function loadAllUserPicks() {
     const containers = document.querySelectorAll('.user-picks-container');

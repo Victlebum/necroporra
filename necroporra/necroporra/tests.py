@@ -6,7 +6,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.urls import reverse
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 import json
 
@@ -230,40 +230,77 @@ class PredictionModelTest(TestCase):
 
 class CreatePoolFormTest(TestCase):
     """Test CreatePoolForm validation."""
-    
-    def test_valid_form(self):
-        """Test form with valid data."""
-        form_data = {
+
+    @staticmethod
+    def _base_form_data():
+        return {
             'name': 'Test Pool',
             'description': 'Test description',
             'timeframe_choice': '1_year',
             'is_public': True,
             'max_predictions_per_user': 5,
             'scoring_mode': 'simple',
-            'picks_visible_from_start': True,
+            'lock_after_days': 3,
         }
+    
+    def test_valid_form(self):
+        """Test form with valid data."""
+        form_data = self._base_form_data()
         form = CreatePoolForm(data=form_data)
         self.assertTrue(form.is_valid())
     
-    def test_picks_visibility_validation(self):
-        """Test that picks visibility settings are validated."""
-        # Invalid: not visible from start and no days specified
-        form_data = {
-            'name': 'Test Pool',
-            'timeframe_choice': '1_year',
-            'is_public': True,
-            'max_predictions_per_user': 5,
-            'scoring_mode': 'simple',
-            'picks_visible_from_start': False,
-            'picks_visible_after_days': None,
-        }
+    def test_lock_after_days_validation(self):
+        """Test that lock window settings are validated."""
+        form_data = self._base_form_data()
+        form_data['description'] = ''
+        form_data['lock_after_days'] = None
         form = CreatePoolForm(data=form_data)
         self.assertFalse(form.is_valid())
-        
-        # Valid: picks visible after 3 days
-        form_data['picks_visible_after_days'] = 3
+
+        form_data['lock_after_days'] = 0
+        form = CreatePoolForm(data=form_data)
+        self.assertFalse(form.is_valid())
+
+        form_data['lock_after_days'] = 3
         form = CreatePoolForm(data=form_data)
         self.assertTrue(form.is_valid())
+
+    @patch('necroporra.forms.timezone.now')
+    def test_rejects_combination_with_less_than_one_active_day(self, mock_now):
+        """Late-year end_of_year + long lock window should be rejected."""
+        mock_now.return_value = timezone.make_aware(datetime(2026, 12, 31, 12, 0, 0))
+
+        form_data = self._base_form_data()
+        form_data['timeframe_choice'] = 'end_of_year'
+        form_data['lock_after_days'] = 1
+
+        form = CreatePoolForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('__all__', form.errors)
+
+    @patch('necroporra.forms.timezone.now')
+    def test_accepts_exactly_one_day_active_window(self, mock_now):
+        """Exactly a 24-hour gap between lock_date and limit_date should pass."""
+        mock_now.return_value = timezone.make_aware(datetime(2026, 12, 29, 23, 59, 59))
+
+        form_data = self._base_form_data()
+        form_data['timeframe_choice'] = 'end_of_year'
+        form_data['lock_after_days'] = 1
+        form = CreatePoolForm(data=form_data)
+        self.assertTrue(form.is_valid())
+
+    @patch('necroporra.forms.timezone.now')
+    def test_rejects_under_one_day_active_window(self, mock_now):
+        """A remaining active window smaller than 24 hours should fail."""
+        mock_now.return_value = timezone.make_aware(datetime(2026, 12, 30, 0, 0, 0))
+
+        form_data = self._base_form_data()
+        form_data['timeframe_choice'] = 'end_of_year'
+        form_data['lock_after_days'] = 1
+
+        form = CreatePoolForm(data=form_data)
+        self.assertFalse(form.is_valid())
+        self.assertIn('__all__', form.errors)
 
 
 class RegisterFormTest(TestCase):
@@ -349,6 +386,29 @@ class ViewsTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.get(reverse('create_pool'))
         self.assertEqual(response.status_code, 200)
+
+    @patch('necroporra.forms.timezone.now')
+    @patch('necroporra.views.timezone.now')
+    def test_create_pool_rejects_invalid_lock_window(self, mock_view_now, mock_form_now):
+        """Pool creation should fail when lock timing leaves less than one active day."""
+        fixed_now = timezone.make_aware(datetime(2026, 12, 31, 12, 0, 0))
+        mock_view_now.return_value = fixed_now
+        mock_form_now.return_value = fixed_now
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('create_pool'), {
+            'name': 'Invalid End Of Year Pool',
+            'description': 'Should fail validation',
+            'timeframe_choice': 'end_of_year',
+            'is_public': True,
+            'max_predictions_per_user': 5,
+            'scoring_mode': 'simple',
+            'lock_after_days': 1,
+        })
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'at least one full active day')
+        self.assertFalse(Pool.objects.filter(name='Invalid End Of Year Pool').exists())
 
 
 class WikidataUtilsTest(TestCase):
@@ -465,7 +525,7 @@ class IntegrationTest(TestCase):
             'is_public': True,
             'max_predictions_per_user': 5,
             'scoring_mode': 'simple',
-            'picks_visible_from_start': True,
+            'lock_after_days': 3,
         })
         
         # Should redirect to pool detail
@@ -474,6 +534,9 @@ class IntegrationTest(TestCase):
         # Verify pool was created
         pool = Pool.objects.get(name='Integration Test Pool')
         self.assertIsNotNone(pool)
+        self.assertFalse(pool.is_locked)
+        self.assertIsNotNone(pool.lock_date)
+        self.assertEqual(pool.lock_after_days, 3)
         
         # Verify user is a member
         membership = PoolMembership.objects.filter(pool=pool, user=self.user)
@@ -590,6 +653,102 @@ class AddCelebrityApiWeightValidationTest(TestCase):
             celebrity=self.celebrity,
         )
         self.assertEqual(prediction.weight, 1)
+
+
+class PoolLockBehaviorApiTest(TestCase):
+    """Tests for unlocked vs locked behavior around visibility and prediction edits."""
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(username='admin', password='testpass123')
+        self.member = User.objects.create_user(username='member', password='testpass123')
+
+        self.pool = Pool.objects.create(
+            creator=self.admin,
+            admin=self.admin,
+            name='Lock Behavior Pool',
+            slug='LOCK1',
+            limit_date=timezone.now() + timedelta(days=365),
+            is_locked=False,
+            lock_after_days=3,
+            lock_date=timezone.now() + timedelta(days=3),
+        )
+        PoolMembership.objects.create(pool=self.pool, user=self.admin)
+        PoolMembership.objects.create(pool=self.pool, user=self.member)
+
+        self.celebrity = Celebrity.objects.create(name='Lock Test Celebrity', wikidata_id='QLOCK1')
+        self.member_prediction = Prediction.objects.create(
+            user=self.member,
+            pool=self.pool,
+            celebrity=self.celebrity,
+        )
+
+    def test_user_picks_hidden_while_pool_unlocked(self):
+        self.client.login(username='admin', password='testpass123')
+
+        response = self.client.get(
+            reverse('api_user_picks', args=[self.pool.slug]),
+            {'user_id': self.member.id},
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('not visible', response.json()['detail'])
+
+    def test_user_picks_visible_after_pool_locked(self):
+        self.pool.is_locked = True
+        self.pool.save(update_fields=['is_locked'])
+        self.client.login(username='admin', password='testpass123')
+
+        response = self.client.get(
+            reverse('api_user_picks', args=[self.pool.slug]),
+            {'user_id': self.member.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['prediction_count'], 1)
+
+    def test_add_prediction_rejected_when_locked(self):
+        self.pool.is_locked = True
+        self.pool.save(update_fields=['is_locked'])
+        self.client.login(username='admin', password='testpass123')
+
+        new_celeb = Celebrity.objects.create(name='Another Celebrity', wikidata_id='QLOCK2')
+        response = self.client.post(
+            reverse('api_add_celebrity', args=[self.pool.slug]),
+            data=json.dumps({'celebrity_id': new_celeb.id}),
+            content_type='application/json',
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('locked', response.json()['detail'].lower())
+
+    def test_delete_prediction_rejected_when_locked(self):
+        self.pool.is_locked = True
+        self.pool.save(update_fields=['is_locked'])
+        self.client.login(username='member', password='testpass123')
+
+        response = self.client.delete(
+            reverse('api_delete_prediction', args=[self.pool.slug, self.member_prediction.id]),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('locked', response.json()['detail'].lower())
+
+    def test_admin_can_lock_pool_immediately(self):
+        self.client.login(username='admin', password='testpass123')
+
+        response = self.client.post(reverse('api_lock_pool', args=[self.pool.slug]))
+
+        self.assertEqual(response.status_code, 200)
+        self.pool.refresh_from_db()
+        self.assertTrue(self.pool.is_locked)
+
+    def test_non_admin_cannot_lock_pool(self):
+        self.client.login(username='member', password='testpass123')
+
+        response = self.client.post(reverse('api_lock_pool', args=[self.pool.slug]))
+
+        self.assertEqual(response.status_code, 403)
 
 
 class UserDeletionCascadeTest(TestCase):
