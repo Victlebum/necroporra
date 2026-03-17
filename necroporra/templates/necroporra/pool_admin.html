@@ -77,19 +77,19 @@
         <div class="column is-narrow">
           <div class="tags has-addons">
             <span class="tag is-dark">Scoring</span>
-            <span class="tag is-light">{{ pool.get_scoring_mode_display }}</span>
+            <span class="tag is-white">{{ pool.get_scoring_mode_display }}</span>
           </div>
         </div>
         <div class="column is-narrow">
           <div class="tags has-addons">
             <span class="tag is-dark">Ends</span>
-            <span class="tag is-light">{{ pool.limit_date|date:"d M Y" }}</span>
+            <span class="tag is-white">{{ pool.limit_date|date:"d M Y" }}</span>
           </div>
         </div>
         <div class="column is-narrow">
           <div class="tags has-addons">
             <span class="tag is-dark">Members</span>
-            <span class="tag is-light">{{ memberships.count }}/20</span>
+            <span class="tag is-white">{{ memberships.count }}/20</span>
           </div>
         </div>
       </div>

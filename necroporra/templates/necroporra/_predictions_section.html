@@ -70,9 +70,9 @@
               {% if prediction.celebrity.birth_date %}
               <p class="subtitle is-7">Born: {{ prediction.celebrity.birth_date }}</p>
               {% endif %}
-              <span class="tag {% if prediction.is_correct == None %}is-light{% elif prediction.is_correct %}is-success{% else %}is-danger{% endif %}">
+              <span class="tag {% if prediction.is_correct == None %}is-success is-light{% elif prediction.is_correct %}is-success{% else %}is-danger{% endif %}">
                 {% if prediction.is_correct == None %}
-                Pending
+                Alive
                 {% elif prediction.is_correct %}
                 ✓ Correct
                 {% else %}
