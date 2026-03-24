@@ -13,7 +13,21 @@
           <div class="has-text-centered-mobile">
             <h1 class="title">{{ pool.name }}</h1>
             <p class="subtitle">
-              <span class="tag is-info is-medium">{{ pool.slug }}</span>
+              <button
+                id="copyPoolInviteBtn"
+                type="button"
+                class="pool-invite-copy-tag"
+                title="Copy pool invite link"
+                aria-label="Copy pool invite link"
+                data-copied-text="Copied!"
+                data-pool-path="{% url 'api_join_pool' slug=pool.slug %}"
+              >
+                <span class="icon pool-invite-copy-icon" aria-hidden="true"><i class="fas fa-link"></i></span>
+                <span class="pool-invite-copy-content">
+                  <span class="pool-invite-copy-tag-hint">Copy invite link</span>
+                  <span class="pool-invite-copy-tag-text">{{ pool.slug }}</span>
+                </span>
+              </button>
             </p>
           </div>
         </div>
@@ -262,12 +276,88 @@
   document.addEventListener('DOMContentLoaded', () => {
     initCelebritySearch(POOL_SLUG, POOL_ID);
     initModal();
+    initPoolInviteCopy();
     
     // Load picks inline once pool is locked.
     {% if pool.is_locked %}
     loadAllUserPicks();
     {% endif %}
   });
+
+  function initPoolInviteCopy() {
+    const copyButton = document.getElementById('copyPoolInviteBtn');
+    if (!copyButton) {
+      return;
+    }
+
+    const textElement = copyButton.querySelector('.pool-invite-copy-tag-text');
+    const hintElement = copyButton.querySelector('.pool-invite-copy-tag-hint');
+    const originalText = textElement ? textElement.textContent.trim() : '';
+    const originalHint = hintElement ? hintElement.textContent.trim() : '';
+    const copiedText = copyButton.getAttribute('data-copied-text') || 'Copied!';
+    const poolPath = copyButton.getAttribute('data-pool-path');
+
+    if (!poolPath) {
+      return;
+    }
+
+    const inviteUrl = `${window.location.origin}${poolPath}`;
+    let resetTimerId = null;
+
+    copyButton.addEventListener('click', async () => {
+      try {
+        await copyTextToClipboard(inviteUrl);
+        copyButton.classList.add('is-copied');
+
+        if (textElement) {
+          textElement.textContent = copiedText;
+        }
+        if (hintElement) {
+          hintElement.textContent = 'Share this with friends';
+        }
+
+        if (resetTimerId) {
+          clearTimeout(resetTimerId);
+        }
+
+        resetTimerId = window.setTimeout(() => {
+          copyButton.classList.remove('is-copied');
+          if (textElement) {
+            textElement.textContent = originalText;
+          }
+          if (hintElement) {
+            hintElement.textContent = originalHint;
+          }
+        }, 1700);
+      } catch (error) {
+        console.error('Failed to copy pool invite link', error);
+        showNotification('Failed to copy invite link. Please copy the URL from your browser.', 'danger');
+      }
+    });
+  }
+
+  async function copyTextToClipboard(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', 'readonly');
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-9999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    const didCopy = document.execCommand('copy');
+    document.body.removeChild(textArea);
+
+    if (!didCopy) {
+      throw new Error('Copy command failed');
+    }
+  }
 
   {% if pool.is_locked %}
   // Load picks for all users inline

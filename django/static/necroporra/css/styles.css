@@ -21716,6 +21716,78 @@ has-background-danger.is-hoverable:active {
   box-shadow: 0 6px 16px hsla(0, 100%, 18%, 0.5), 0 0 0 1px hsl(0, 100%, 22%);
 }
 
+.pool-invite-copy-tag {
+  appearance: none;
+  border: 1px solid hsla(var(--bulma-info-h), var(--bulma-info-s), calc(var(--bulma-info-l) + 8%), 0.56);
+  border-radius: 0.9rem;
+  background: radial-gradient(circle at 14% 24%, hsla(var(--bulma-info-h), var(--bulma-info-s), calc(var(--bulma-info-l) + 18%), 0.35), transparent 50%), linear-gradient(125deg, hsl(274, 64%, 36%) 0%, hsl(262, 70%, 46%) 100%);
+  color: hsl(0, 14%, 92%);
+  cursor: pointer;
+  display: inline-grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.7rem;
+  min-width: 13.25rem;
+  padding: 0.42rem 0.72rem;
+  text-align: left;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+.pool-invite-copy-tag .pool-invite-copy-icon {
+  background: hsla(0, 0%, 100%, 0.18);
+  border-radius: 999px;
+  color: hsl(0, 12%, 94%);
+  height: 1.55rem;
+  width: 1.55rem;
+  margin-right: 0.1rem;
+}
+.pool-invite-copy-tag .pool-invite-copy-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.04rem;
+  line-height: 1.15;
+}
+.pool-invite-copy-tag .pool-invite-copy-tag-text {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 0.82rem;
+  text-transform: none;
+}
+.pool-invite-copy-tag .pool-invite-copy-tag-hint {
+  font-size: 0.64rem;
+  letter-spacing: 0.03em;
+  opacity: 0.86;
+}
+.pool-invite-copy-tag:hover {
+  border-color: hsla(var(--bulma-info-h), var(--bulma-info-s), calc(var(--bulma-info-l) + 18%), 0.92);
+  box-shadow: 0 8px 18px hsla(var(--bulma-info-h), var(--bulma-info-s), var(--bulma-info-l), 0.3);
+  transform: translateY(-1px);
+}
+.pool-invite-copy-tag:active {
+  transform: translateY(0);
+}
+.pool-invite-copy-tag:focus-visible {
+  outline: 2px solid hsla(var(--bulma-info-h), var(--bulma-info-s), calc(var(--bulma-info-l) + 22%), 0.92);
+  outline-offset: 2px;
+}
+.pool-invite-copy-tag.is-copied {
+  border-color: hsla(var(--bulma-success-h), var(--bulma-success-s), calc(var(--bulma-success-l) + 10%), 0.9);
+  background: linear-gradient(110deg, hsla(var(--bulma-success-h), var(--bulma-success-s), var(--bulma-success-l), 0.28) 0%, hsla(var(--bulma-success-h), var(--bulma-success-s), calc(var(--bulma-success-l) + 12%), 0.3) 100%);
+  box-shadow: 0 10px 26px hsla(var(--bulma-success-h), var(--bulma-success-s), var(--bulma-success-l), 0.2);
+}
+.pool-invite-copy-tag.is-copied .pool-invite-copy-icon {
+  background: hsla(var(--bulma-success-h), var(--bulma-success-s), calc(var(--bulma-success-l) + 10%), 0.35);
+}
+
+@media screen and (max-width: 768px) {
+  .pool-invite-copy-tag {
+    min-width: 0;
+    width: 100%;
+  }
+  .pool-invite-copy-tag .pool-invite-copy-tag-hint {
+    font-size: 0.68rem;
+  }
+}
 .pool-meta-grid {
   margin-inline-start: calc(-1 * var(--bulma-column-gap));
   margin-inline-end: calc(-1 * var(--bulma-column-gap));
