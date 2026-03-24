@@ -22,6 +22,7 @@ urlpatterns = [
     path('settings/', views.user_settings_view, name='user_settings'),
     path('settings/change-password/', views.change_password_view, name='change_password'),
     path('pools/<str:slug>/', views.pool_detail_view, name='pool_detail'),
+    path('join/<str:slug>/', views.join_pool_view, name='join_pool'),
     
     # API endpoints (for AJAX interactions)
     path('api/pools/<str:slug>/join/', views.join_pool_api, name='api_join_pool'),

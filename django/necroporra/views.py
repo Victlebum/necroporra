@@ -1,5 +1,6 @@
 from datetime import timedelta, date
 import json
+from urllib.parse import urlencode
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, authenticate, logout as auth_logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
@@ -9,6 +10,8 @@ from django.utils import timezone
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.urls import reverse
 
 from .models import (
     Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS,
@@ -23,7 +26,17 @@ from .serializers_utils import serialize_celebrity_payload, build_celebrity_disp
 
 def login_view(request):
     """Handle user login."""
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and not url_has_allowed_host_and_scheme(
+        url=next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        next_url = None
+
     if request.user.is_authenticated:
+        if next_url:
+            return redirect(next_url)
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -34,13 +47,18 @@ def login_view(request):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
+                if next_url:
+                    return redirect(next_url)
                 return redirect('dashboard')
             else:
                 messages.error(request, 'Invalid username or password')
     else:
         form = LoginForm()
     
-    return render(request, 'necroporra/login.html', {'form': form})
+    return render(request, 'necroporra/login.html', {
+        'form': form,
+        'next': next_url,
+    })
 
 
 def register_view(request):
@@ -213,6 +231,73 @@ def index(request):
     return redirect('login')
 
 
+def _attempt_pool_join(pool, user):
+    """Attempt to add a user to a pool and return status metadata."""
+    if not pool.is_pool_active():
+        return None, 'inactive'
+
+    if pool.memberships.count() >= MAX_POOL_MEMBERS:
+        return None, 'full'
+
+    membership, created = PoolMembership.objects.get_or_create(
+        pool=pool,
+        user=user,
+    )
+
+    if created:
+        return membership, 'joined'
+
+    return membership, 'already_member'
+
+
+@require_http_methods(["GET", "POST"])
+def join_pool_view(request, slug):
+    """Browser-friendly pool join flow with confirmation screen."""
+    pool = get_object_or_404(Pool, slug=slug)
+
+    if request.user.is_authenticated and pool.memberships.filter(user=request.user).exists():
+        return redirect('pool_detail', slug=pool.slug)
+
+    is_active = pool.is_pool_active()
+    days_remaining = pool.days_remaining()
+    stats = {
+        'member_count': pool.memberships.count(),
+        'celebrity_count': pool.celebrities.count(),
+        'prediction_count': pool.predictions.count(),
+    }
+
+    can_join = is_active and stats['member_count'] < MAX_POOL_MEMBERS
+    join_error = None
+
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.info(request, 'Please log in to join this pool.')
+            query_string = urlencode({'next': request.path})
+            return redirect(f"{reverse('login')}?{query_string}")
+
+        membership, status = _attempt_pool_join(pool, request.user)
+        if status in ('joined', 'already_member'):
+            if status == 'joined':
+                messages.success(request, f'You joined "{pool.name}" successfully!')
+            return redirect('pool_detail', slug=pool.slug)
+
+        if status == 'full':
+            join_error = f'This pool has reached its maximum capacity of {MAX_POOL_MEMBERS} members.'
+            can_join = False
+        elif status == 'inactive':
+            join_error = 'This pool has ended and is no longer accepting new members.'
+            can_join = False
+
+    return render(request, 'necroporra/join_pool.html', {
+        'pool': pool,
+        'stats': stats,
+        'is_active': is_active,
+        'days_remaining': days_remaining,
+        'can_join': can_join,
+        'join_error': join_error,
+    })
+
+
 # ========== API Views (for AJAX interactions) ==========
 
 
@@ -221,26 +306,9 @@ def index(request):
 def join_pool_api(request, slug):
     """Join a pool using its slug."""
     pool = get_object_or_404(Pool, slug=slug)
-    
-    # Check if pool is active
-    if not pool.is_pool_active():
-        return JsonResponse(
-            {'detail': 'This pool has ended and is no longer accepting new members'},
-            status=400
-        )
 
-    # Check member cap
-    if pool.memberships.count() >= MAX_POOL_MEMBERS:
-        return JsonResponse(
-            {'detail': f'This pool has reached its maximum capacity of {MAX_POOL_MEMBERS} members.'},
-            status=400
-        )
-
-    membership, created = PoolMembership.objects.get_or_create(
-        pool=pool,
-        user=request.user
-    )
-    if created:
+    membership, status = _attempt_pool_join(pool, request.user)
+    if status == 'joined':
         return JsonResponse(
             {
                 'id': membership.pk,
@@ -254,6 +322,19 @@ def join_pool_api(request, slug):
             },
             status=201
         )
+
+    if status == 'inactive':
+        return JsonResponse(
+            {'detail': 'This pool has ended and is no longer accepting new members'},
+            status=400
+        )
+
+    if status == 'full':
+        return JsonResponse(
+            {'detail': f'This pool has reached its maximum capacity of {MAX_POOL_MEMBERS} members.'},
+            status=400
+        )
+
     return JsonResponse(
         {'detail': 'Already a member of this pool'},
         status=400

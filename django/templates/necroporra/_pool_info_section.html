@@ -1,0 +1,60 @@
+{# Reusable pool information section #}
+<div class="box mb-5">
+  {% if pool.description %}
+  <div class="content">
+    <p>{{ pool.description }}</p>
+  </div>
+  {% endif %}
+
+  <div class="columns is-mobile is-multiline pool-meta-grid">
+    <div class="column is-half-mobile is-6-tablet is-3-desktop">
+      <div class="pool-meta-card">
+        <span class="icon pool-meta-card-icon" aria-hidden="true">
+          <i class="fas fa-users"></i>
+        </span>
+        <p class="pool-meta-card-label">Members</p>
+        <p class="pool-meta-card-value">{{ stats.member_count }}/20</p>
+      </div>
+    </div>
+
+    <div class="column is-half-mobile is-6-tablet is-3-desktop">
+      <div class="pool-meta-card {% if is_active %}is-success{% else %}is-danger{% endif %}">
+        <span class="icon pool-meta-card-icon" aria-hidden="true">
+          <i class="fas fa-signal"></i>
+        </span>
+        <p class="pool-meta-card-label">Status</p>
+        <p class="pool-meta-card-value">{% if is_active %}Active{% else %}Ended{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="column is-half-mobile is-6-tablet is-3-desktop">
+      <div class="pool-meta-card">
+        <span class="icon pool-meta-card-icon" aria-hidden="true">
+          <i class="fas fa-calendar-check"></i>
+        </span>
+        <p class="pool-meta-card-label">End Date</p>
+        <p class="pool-meta-card-value">{{ pool.limit_date|date:"d M Y" }}</p>
+      </div>
+    </div>
+
+    <div class="column is-half-mobile is-6-tablet is-3-desktop">
+      <div class="pool-meta-card {% if is_active and days_remaining < 30 %}is-warning{% elif is_active %}is-success{% else %}is-danger{% endif %}">
+        <span class="icon pool-meta-card-icon" aria-hidden="true">
+          <i class="fas fa-clock"></i>
+        </span>
+        <p class="pool-meta-card-label">Time Remaining</p>
+        <p class="pool-meta-card-value">
+          {% if is_active %}
+            {% if days_remaining > 0 %}
+            {{ days_remaining }} day{{ days_remaining|pluralize }} left
+            {% else %}
+            Ends today
+            {% endif %}
+          {% else %}
+          Ended
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>

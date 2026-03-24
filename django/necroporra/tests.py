@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 import json
 
-from .models import Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction
+from .models import Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS
 from .forms import CreatePoolForm, RegisterForm
 from . import wikidata_utils
 
@@ -386,6 +386,86 @@ class ViewsTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.get(reverse('create_pool'))
         self.assertEqual(response.status_code, 200)
+
+    def test_join_pool_view_redirects_if_already_member(self):
+        """Existing members should be redirected to pool detail from join page."""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+        self.assertRedirects(response, reverse('pool_detail', args=[self.pool.slug]))
+
+    def test_join_pool_view_renders_confirmation_for_non_member(self):
+        """Non-members should see the browser join confirmation page."""
+        guest = User.objects.create_user(username='guest', password='testpass123')
+        self.client.login(username=guest.username, password='testpass123')
+
+        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.pool.name)
+        self.assertContains(response, 'Confirm and Join Pool')
+
+    def test_join_pool_view_post_redirects_to_login_when_logged_out(self):
+        """Submitting join confirmation while logged out should redirect to login with next."""
+        response = self.client.post(reverse('join_pool', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response.url)
+        self.assertIn('next=', response.url)
+
+    def test_join_pool_view_post_joins_for_authenticated_user(self):
+        """Authenticated non-members should join successfully and be redirected."""
+        joiner = User.objects.create_user(username='joiner', password='testpass123')
+        self.client.login(username=joiner.username, password='testpass123')
+
+        response = self.client.post(reverse('join_pool', args=[self.pool.slug]))
+        self.assertRedirects(response, reverse('pool_detail', args=[self.pool.slug]))
+        self.assertTrue(
+            PoolMembership.objects.filter(pool=self.pool, user=joiner).exists()
+        )
+
+    def test_join_pool_view_full_pool_disables_join(self):
+        """Full pools should not allow joining from browser flow."""
+        owner = User.objects.create_user(username='owner', password='testpass123')
+        full_pool = Pool.objects.create(
+            creator=owner,
+            admin=owner,
+            name='Full Pool',
+            slug='FULL1',
+            limit_date=timezone.now() + timedelta(days=30),
+        )
+        PoolMembership.objects.create(pool=full_pool, user=owner)
+
+        for i in range(MAX_POOL_MEMBERS - 1):
+            member = User.objects.create_user(username=f'fullmember{i}', password='testpass123')
+            PoolMembership.objects.create(pool=full_pool, user=member)
+
+        late_user = User.objects.create_user(username='latecomer', password='testpass123')
+        self.client.login(username='latecomer', password='testpass123')
+
+        response = self.client.post(reverse('join_pool', args=[full_pool.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This pool is full')
+        self.assertFalse(
+            PoolMembership.objects.filter(pool=full_pool, user=late_user).exists()
+        )
+
+    def test_api_join_pool_get_still_returns_405(self):
+        """API join route should remain POST-only for AJAX callers."""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('api_join_pool', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 405)
+
+    def test_login_view_respects_next_redirect(self):
+        """Custom login view should redirect to a safe next URL after login."""
+        target = reverse('join_pool', args=[self.pool.slug])
+        response = self.client.post(
+            reverse('login'),
+            {
+                'username': 'testuser',
+                'password': 'testpass123',
+                'next': target,
+            },
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, target)
 
     @patch('necroporra.forms.timezone.now')
     @patch('necroporra.views.timezone.now')

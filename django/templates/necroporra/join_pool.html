@@ -1,0 +1,45 @@
+{% extends "necroporra/layout.html" %}
+
+{% block title %}Join {{ pool.name }} - Necroporra{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container">
+    <div class="columns is-centered">
+      <div class="column is-10-desktop is-11-tablet">
+        <div class="has-text-centered mb-5">
+          <h1 class="title">Join Pool</h1>
+          <p class="subtitle">{{ pool.name }}</p>
+        </div>
+
+        {% include "necroporra/_pool_info_section.html" %}
+
+        <div class="box has-text-centered">
+          {% if join_error %}
+          <p class="has-text-danger mb-4">{{ join_error }}</p>
+          {% endif %}
+
+          <form method="post">
+            {% csrf_token %}
+            <button type="submit" class="button is-primary is-medium" {% if not can_join %}disabled aria-disabled="true"{% endif %}>
+              <span class="icon"><i class="fas fa-user-plus"></i></span>
+              {% if can_join %}
+              <span>Confirm and Join Pool</span>
+              {% else %}
+              <span>This pool is full</span>
+              {% endif %}
+            </button>
+          </form>
+
+          <div class="mt-4">
+            <a href="{% url 'dashboard' %}" class="button is-light">
+              <span class="icon"><i class="fas fa-arrow-left"></i></span>
+              <span>Back to Dashboard</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
