@@ -7,14 +7,14 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Sum, Count
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.models import User
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse
 
 from .models import (
-    Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS,
+    Pool, PoolInvitation, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS,
     score_pool_celebrity, unscore_pool_celebrity,
 )
 from .forms import LoginForm, RegisterForm, CreatePoolForm, ChangePasswordForm
@@ -132,6 +132,10 @@ def create_pool_view(request):
             
             pool.admin = request.user
             pool.save()
+
+            # Private pools use tokenized invitation links.
+            if not pool.is_public:
+                PoolInvitation.issue_for_pool(pool, created_by=request.user)
             
             # Add creator as first member
             PoolMembership.objects.create(pool=pool, user=request.user)
@@ -208,9 +212,20 @@ def pool_detail_view(request, slug):
         'celebrity_count': pool.celebrities.count(),
         'prediction_count': pool.predictions.count(),
     }
+    can_share_invite_link = pool.is_public or request.user == pool.admin or pool.allow_member_invite_links
+    invite_join_path = reverse('join_pool', kwargs={'slug': pool.slug})
+
+    if not pool.is_public and can_share_invite_link:
+        pool_invitation = pool.ensure_active_invitation(created_by=pool.admin)
+        invite_join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': pool_invitation.token})
+    else:
+        pool_invitation = None
     
     return render(request, 'necroporra/pool_detail.html', {
         'pool': pool,
+        'pool_invitation': pool_invitation,
+        'can_share_invite_link': can_share_invite_link,
+        'invite_join_path': invite_join_path,
         'leaderboard': leaderboard,
         'predictions': all_predictions,
         'user_predictions': user_predictions,
@@ -252,8 +267,68 @@ def _attempt_pool_join(pool, user):
 
 @require_http_methods(["GET", "POST"])
 def join_pool_view(request, slug):
-    """Browser-friendly pool join flow with confirmation screen."""
+    """Browser-friendly join flow for public pools."""
     pool = get_object_or_404(Pool, slug=slug)
+    if not pool.is_public:
+        raise Http404('Pool join link not found')
+
+    if request.user.is_authenticated and pool.memberships.filter(user=request.user).exists():
+        return redirect('pool_detail', slug=pool.slug)
+
+    is_active = pool.is_pool_active()
+    days_remaining = pool.days_remaining()
+    stats = {
+        'member_count': pool.memberships.count(),
+        'celebrity_count': pool.celebrities.count(),
+        'prediction_count': pool.predictions.count(),
+    }
+
+    can_join = is_active and stats['member_count'] < MAX_POOL_MEMBERS
+    join_error = None
+
+    if request.method == 'POST':
+        if not request.user.is_authenticated:
+            messages.info(request, 'Please log in to join this pool.')
+            query_string = urlencode({'next': request.path})
+            return redirect(f"{reverse('login')}?{query_string}")
+
+        membership, status = _attempt_pool_join(pool, request.user)
+        if status in ('joined', 'already_member'):
+            if status == 'joined':
+                messages.success(request, f'You joined "{pool.name}" successfully!')
+            return redirect('pool_detail', slug=pool.slug)
+
+        if status == 'full':
+            join_error = f'This pool has reached its maximum capacity of {MAX_POOL_MEMBERS} members.'
+            can_join = False
+        elif status == 'inactive':
+            join_error = 'This pool has ended and is no longer accepting new members.'
+            can_join = False
+
+    return render(request, 'necroporra/join_pool.html', {
+        'pool': pool,
+        'stats': stats,
+        'is_active': is_active,
+        'days_remaining': days_remaining,
+        'can_join': can_join,
+        'join_error': join_error,
+    })
+
+
+@require_http_methods(["GET", "POST"])
+def join_pool_invite_view(request, slug, invitation):
+    """Browser-friendly join flow for private pools with invitation token."""
+    pool = get_object_or_404(Pool, slug=slug)
+    if pool.is_public:
+        return redirect('join_pool', slug=pool.slug)
+
+    get_object_or_404(
+        PoolInvitation,
+        pool=pool,
+        token=invitation,
+        is_active=True,
+        expires_at__gt=timezone.now(),
+    )
 
     if request.user.is_authenticated and pool.memberships.filter(user=request.user).exists():
         return redirect('pool_detail', slug=pool.slug)
@@ -684,11 +759,19 @@ def pool_admin_view(request, slug):
 
     memberships = pool.memberships.select_related('user').order_by('-total_points', '-wins')
     pool_celebrities = pool.celebrities.select_related('celebrity').order_by('celebrity__name')
+    pool_invitation = None
+    invite_join_path = reverse('join_pool', kwargs={'slug': pool.slug})
+
+    if not pool.is_public:
+        pool_invitation = pool.ensure_active_invitation(created_by=request.user)
+        invite_join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': pool_invitation.token})
 
     return render(request, 'necroporra/pool_admin.html', {
         'pool': pool,
         'memberships': memberships,
         'pool_celebrities': pool_celebrities,
+        'pool_invitation': pool_invitation,
+        'invite_join_path': invite_join_path,
     })
 
 
@@ -851,6 +934,51 @@ def lock_pool_api(request, slug):
     pool.save(update_fields=['is_locked', 'lock_date'])
 
     return JsonResponse({'detail': 'Pool locked. Picks are now visible and prediction edits are closed.'})
+
+
+@require_http_methods(["POST"])
+@login_required
+def regenerate_invitation_api(request, slug):
+    """Regenerate the active pool invitation token (admin only)."""
+    pool = get_object_or_404(Pool, slug=slug)
+
+    if request.user != pool.admin:
+        return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
+
+    if pool.is_public:
+        return JsonResponse({'detail': 'Public pools use slug join links and do not use invitation tokens.'}, status=400)
+
+    invitation = PoolInvitation.issue_for_pool(pool, created_by=request.user)
+    join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': invitation.token})
+
+    return JsonResponse({
+        'detail': 'Invitation link regenerated. Previous invite links are now invalid.',
+        'token': invitation.token,
+        'join_path': join_path,
+        'expires_at': invitation.expires_at.isoformat(),
+    })
+
+
+@require_http_methods(["POST"])
+@login_required
+def toggle_member_invite_links_api(request, slug):
+    """Toggle whether private-pool members (non-admin) can view/copy invite links."""
+    pool = get_object_or_404(Pool, slug=slug)
+
+    if request.user != pool.admin:
+        return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
+
+    if pool.is_public:
+        return JsonResponse({'detail': 'This setting only applies to private pools.'}, status=400)
+
+    pool.allow_member_invite_links = not pool.allow_member_invite_links
+    pool.save(update_fields=['allow_member_invite_links'])
+
+    status_text = 'enabled' if pool.allow_member_invite_links else 'disabled'
+    return JsonResponse({
+        'detail': f'Member invite-link sharing {status_text}.',
+        'allow_member_invite_links': pool.allow_member_invite_links,
+    })
 
 
 # ========== User Settings ==========

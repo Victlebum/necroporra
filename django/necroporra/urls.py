@@ -23,6 +23,7 @@ urlpatterns = [
     path('settings/change-password/', views.change_password_view, name='change_password'),
     path('pools/<str:slug>/', views.pool_detail_view, name='pool_detail'),
     path('join/<str:slug>/', views.join_pool_view, name='join_pool'),
+    path('join/<str:slug>/<str:invitation>/', views.join_pool_invite_view, name='join_pool_invite'),
     
     # API endpoints (for AJAX interactions)
     path('api/pools/<str:slug>/join/', views.join_pool_api, name='api_join_pool'),
@@ -37,6 +38,8 @@ urlpatterns = [
     path('api/pools/<str:slug>/remove-member/', views.remove_member_api, name='api_remove_member'),
     path('api/pools/<str:slug>/delete/', views.delete_pool_api, name='api_delete_pool'),
     path('api/pools/<str:slug>/lock-now/', views.lock_pool_api, name='api_lock_pool'),
+    path('api/pools/<str:slug>/regenerate-invite/', views.regenerate_invitation_api, name='api_regenerate_invite'),
+    path('api/pools/<str:slug>/toggle-member-invite-links/', views.toggle_member_invite_links_api, name='api_toggle_member_invite_links'),
     path('api/pools/<str:slug>/mark-dead/', views.mark_celebrity_dead_api, name='api_mark_dead'),
 
     # User settings API

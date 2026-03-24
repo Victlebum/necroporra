@@ -2,8 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django.db.models import Count
-
-from .models import Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction
+from .models import Pool, PoolInvitation, PoolMembership, Celebrity, PoolCelebrity, Prediction
 
 
 # ========== Site Branding ==========
@@ -210,6 +209,14 @@ class CelebrityAdmin(admin.ModelAdmin):
                 obj.image_url,
             )
         return "No image"
+
+
+@admin.register(PoolInvitation)
+class PoolInvitationAdmin(admin.ModelAdmin):
+    list_display = ('pool', 'token', 'is_active', 'expires_at', 'created_by', 'created_at')
+    list_filter = ('is_active',)
+    search_fields = ('pool__name', 'pool__slug', 'token', 'created_by__username')
+    readonly_fields = ('token', 'created_at')
 
 
 @admin.register(PoolMembership)

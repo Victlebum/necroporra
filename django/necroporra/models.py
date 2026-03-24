@@ -2,7 +2,8 @@ import secrets
 import string
 from datetime import timedelta
 from dateutil.relativedelta import relativedelta
-from django.db import models
+from django.db import models, transaction
+from django.db.models import Q
 from django.contrib.auth.models import User
 from django.core.validators import RegexValidator, MinValueValidator, MaxValueValidator
 from django.core.exceptions import ValidationError
@@ -10,6 +11,7 @@ from django.utils import timezone
 
 
 MAX_POOL_MEMBERS = 20
+INVITATION_EXPIRATION_DAYS = 14
 
 
 def get_default_timeframe():
@@ -75,7 +77,11 @@ class Pool(models.Model):
     # Access control
     is_public = models.BooleanField(
         default=True,
-        help_text="Public pools can be discovered; private pools require the slug code"
+        help_text="Public pools can be discovered by slug code; private pools require a valid invitation link"
+    )
+    allow_member_invite_links = models.BooleanField(
+        default=True,
+        help_text="For private pools, allow non-admin members to copy invitation links"
     )
     
     # Prediction limits
@@ -173,6 +179,75 @@ class Pool(models.Model):
             return 0
         delta = self.limit_date - timezone.now()
         return max(0, delta.days)
+
+    def get_active_invitation(self):
+        """Return the currently active invitation, if any."""
+        return self.invitations.filter(is_active=True).order_by('-created_at').first()
+
+    def ensure_active_invitation(self, created_by=None):
+        """Ensure there is a currently valid active invitation for this pool."""
+        if self.is_public:
+            return None
+        invitation = self.get_active_invitation()
+        if invitation and invitation.is_valid():
+            return invitation
+        return PoolInvitation.issue_for_pool(self, created_by=created_by)
+
+
+class PoolInvitation(models.Model):
+    """Invitation tokens used to access browser join links for a pool."""
+
+    pool = models.ForeignKey(Pool, on_delete=models.CASCADE, related_name='invitations')
+    token = models.CharField(max_length=64, unique=True, db_index=True)
+    created_by = models.ForeignKey(
+        User,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='pool_invitations_created',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(db_index=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['pool'],
+                condition=Q(is_active=True),
+                name='unique_active_invitation_per_pool',
+            ),
+        ]
+
+    def __str__(self):
+        return f"Invitation for {self.pool.slug} ({'active' if self.is_active else 'inactive'})"
+
+    @staticmethod
+    def generate_token(length=32):
+        """Generate a unique URL-safe invitation token."""
+        alphabet = string.ascii_letters + string.digits
+        while True:
+            token = ''.join(secrets.choice(alphabet) for _ in range(length))
+            if not PoolInvitation.objects.filter(token=token).exists():
+                return token
+
+    def is_valid(self):
+        """Return whether this invitation can still be used."""
+        return self.is_active and timezone.now() < self.expires_at
+
+    @classmethod
+    def issue_for_pool(cls, pool, created_by=None):
+        """Create a new active invitation and deactivate previous active ones."""
+        with transaction.atomic():
+            cls.objects.filter(pool=pool, is_active=True).update(is_active=False)
+            return cls.objects.create(
+                pool=pool,
+                token=cls.generate_token(),
+                created_by=created_by,
+                expires_at=timezone.now() + timedelta(days=INVITATION_EXPIRATION_DAYS),
+                is_active=True,
+            )
 
 
 class PoolMembership(models.Model):

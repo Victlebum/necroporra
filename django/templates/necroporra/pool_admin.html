@@ -93,6 +93,73 @@
           </div>
         </div>
       </div>
+
+      <hr class="my-4">
+      <div class="field mb-3">
+        <label class="label">Current Join Link</label>
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input
+              id="poolInviteInput"
+              class="input"
+              type="text"
+              readonly
+              value="{{ request.scheme }}://{{ request.get_host }}{{ invite_join_path }}"
+            >
+          </div>
+          <div class="control">
+            <button type="button" class="button" onclick="copyInviteLink()">
+              <span class="icon"><i class="fas fa-copy"></i></span>
+              <span>Copy</span>
+            </button>
+          </div>
+          {% if not pool.is_public %}
+          <div class="control">
+            <button type="button" class="button is-warning" id="btn-regenerate-invite" onclick="regenerateInviteLink()">
+              <span class="icon"><i class="fas fa-arrows-rotate"></i></span>
+              <span>Regenerate</span>
+            </button>
+          </div>
+          {% endif %}
+        </div>
+        {% if pool.is_public %}
+        <p class="help">Public pools use slug-based join links.</p>
+        {% else %}
+        <p class="help">Invitation links expire after 14 days. Regenerating invalidates the previous link immediately.</p>
+        {% endif %}
+      </div>
+
+      {% if not pool.is_public %}
+      <hr class="my-4">
+      <div class="level is-mobile mb-3">
+        <div class="level-left">
+          <div class="level-item">
+            <div>
+              <p class="has-text-weight-semibold">Private Invite Link Sharing</p>
+              <p class="is-size-7 has-text-grey">Control whether non-admin pool members can view and copy private invitation links.</p>
+            </div>
+          </div>
+        </div>
+        <div class="level-right">
+          <div class="level-item">
+            <span
+              id="memberInviteSharingBadge"
+              class="tag is-medium {% if pool.allow_member_invite_links %}is-success{% else %}is-dark{% endif %}"
+            >{% if pool.allow_member_invite_links %}Enabled{% else %}Disabled{% endif %}</span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="button {% if pool.allow_member_invite_links %}is-warning{% else %}is-success{% endif %}"
+        id="btn-toggle-member-invite-links"
+        onclick="toggleMemberInviteLinks()"
+      >
+        <span class="icon"><i class="fas fa-user-shield"></i></span>
+        <span id="memberInviteSharingActionLabel">{% if pool.allow_member_invite_links %}Disable member access{% else %}Enable member access{% endif %}</span>
+      </button>
+      {% endif %}
     </div>
 
     {# Members #}
@@ -387,6 +454,81 @@ async function doTransferAdmin(userId, username) {
     setTimeout(() => window.location.reload(), 900);
   } catch (e) {
     showNotification(e.message || 'Network error. Please try again.', 'danger');
+  }
+}
+
+// ── Invitation link ────────────────────────────────────────────
+async function copyInviteLink() {
+  const input = document.getElementById('poolInviteInput');
+  if (!input) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(input.value);
+    showNotification('Invitation link copied.', 'success');
+  } catch (e) {
+    input.focus();
+    input.select();
+    showNotification('Unable to copy automatically. Press Ctrl+C to copy the selected link.', 'warning');
+  }
+}
+
+async function regenerateInviteLink() {
+  const button = document.getElementById('btn-regenerate-invite');
+  if (button) button.classList.add('is-loading');
+
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/regenerate-invite/`, {
+      method: 'POST',
+    });
+
+    const input = document.getElementById('poolInviteInput');
+    if (input) {
+      input.value = `${window.location.origin}${data.join_path}`;
+    }
+
+    showNotification(data.detail, 'success');
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  } finally {
+    if (button) button.classList.remove('is-loading');
+  }
+}
+
+async function toggleMemberInviteLinks() {
+  const button = document.getElementById('btn-toggle-member-invite-links');
+  const stateBadge = document.getElementById('memberInviteSharingBadge');
+  const actionLabel = document.getElementById('memberInviteSharingActionLabel');
+  if (button) button.classList.add('is-loading');
+
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/toggle-member-invite-links/`, {
+      method: 'POST',
+    });
+
+    if (stateBadge) {
+      stateBadge.textContent = data.allow_member_invite_links ? 'Enabled' : 'Disabled';
+      stateBadge.classList.remove('is-success', 'is-dark');
+      stateBadge.classList.add(data.allow_member_invite_links ? 'is-success' : 'is-dark');
+    }
+
+    if (actionLabel) {
+      actionLabel.textContent = data.allow_member_invite_links
+        ? 'Disable member access'
+        : 'Enable member access';
+    }
+
+    if (button) {
+      button.classList.remove('is-success', 'is-warning');
+      button.classList.add(data.allow_member_invite_links ? 'is-warning' : 'is-success');
+    }
+
+    showNotification(data.detail, 'success');
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  } finally {
+    if (button) button.classList.remove('is-loading');
   }
 }
 

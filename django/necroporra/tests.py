@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 import json
 
-from .models import Pool, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS
+from .models import Pool, PoolInvitation, PoolMembership, Celebrity, PoolCelebrity, Prediction, MAX_POOL_MEMBERS
 from .forms import CreatePoolForm, RegisterForm
 from . import wikidata_utils
 
@@ -403,6 +403,33 @@ class ViewsTest(TestCase):
         self.assertContains(response, self.pool.name)
         self.assertContains(response, 'Confirm and Join Pool')
 
+    def test_private_join_pool_invite_view_rejects_invalid_invitation_token(self):
+        """Unknown invitation tokens should not reveal private pool join page."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+
+        response = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, 'NOTVALIDTOKEN']))
+        self.assertEqual(response.status_code, 404)
+
+    def test_private_join_pool_invite_view_rejects_expired_invitation_token(self):
+        """Expired invitation tokens should return 404."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+        invitation = PoolInvitation.issue_for_pool(self.pool, created_by=self.user)
+        invitation.expires_at = timezone.now() - timedelta(minutes=1)
+        invitation.save(update_fields=['expires_at'])
+
+        response = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, invitation.token]))
+        self.assertEqual(response.status_code, 404)
+
+    def test_private_join_requires_invitation_route(self):
+        """Private pools should not be joinable via slug-only join route."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+
+        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 404)
+
     def test_join_pool_view_post_redirects_to_login_when_logged_out(self):
         """Submitting join confirmation while logged out should redirect to login with next."""
         response = self.client.post(reverse('join_pool', args=[self.pool.slug]))
@@ -446,6 +473,76 @@ class ViewsTest(TestCase):
         self.assertFalse(
             PoolMembership.objects.filter(pool=full_pool, user=late_user).exists()
         )
+
+    def test_regenerate_invite_requires_pool_admin(self):
+        """Only the pool admin should be able to rotate invitation links."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+        PoolInvitation.issue_for_pool(self.pool, created_by=self.user)
+
+        member = User.objects.create_user(username='member', password='testpass123')
+        PoolMembership.objects.create(pool=self.pool, user=member)
+        self.client.login(username='member', password='testpass123')
+
+        response = self.client.post(reverse('api_regenerate_invite', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_regenerate_invite_invalidates_old_token(self):
+        """Regenerating invitation links should deactivate the previous token."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+        pool_invitation = PoolInvitation.issue_for_pool(self.pool, created_by=self.user)
+
+        self.client.login(username='testuser', password='testpass123')
+
+        old_token = pool_invitation.token
+        response = self.client.post(reverse('api_regenerate_invite', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+
+        pool_invitation.refresh_from_db()
+        self.assertFalse(pool_invitation.is_active)
+
+        payload = json.loads(response.content)
+        new_token = payload['token']
+        self.assertNotEqual(new_token, old_token)
+
+        stale_join = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, old_token]))
+        self.assertEqual(stale_join.status_code, 404)
+
+        valid_join = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, new_token]))
+        self.assertEqual(valid_join.status_code, 302)
+        self.assertRedirects(valid_join, reverse('pool_detail', args=[self.pool.slug]))
+
+    def test_toggle_member_invite_links_requires_pool_admin(self):
+        """Only private pool admins can toggle member invite-link sharing."""
+        self.pool.is_public = False
+        self.pool.save(update_fields=['is_public'])
+
+        member = User.objects.create_user(username='member2', password='testpass123')
+        PoolMembership.objects.create(pool=self.pool, user=member)
+        self.client.login(username='member2', password='testpass123')
+
+        response = self.client.post(reverse('api_toggle_member_invite_links', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_toggle_member_invite_links_updates_private_pool_setting(self):
+        """Admin toggling should flip member invite-link access on private pools."""
+        self.pool.is_public = False
+        self.pool.allow_member_invite_links = True
+        self.pool.save(update_fields=['is_public', 'allow_member_invite_links'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('api_toggle_member_invite_links', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+
+        self.pool.refresh_from_db()
+        self.assertFalse(self.pool.allow_member_invite_links)
+
+    def test_toggle_member_invite_links_rejected_for_public_pool(self):
+        """Public pools should reject private invite-sharing toggle API."""
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('api_toggle_member_invite_links', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 400)
 
     def test_api_join_pool_get_still_returns_405(self):
         """API join route should remain POST-only for AJAX callers."""

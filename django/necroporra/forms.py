@@ -105,7 +105,7 @@ class CreatePoolForm(forms.ModelForm):
         label='Public Pool',
         initial=True,
         required=False,
-        help_text='Public pools can be discovered by anyone with the code',
+        help_text='Public pools can be discovered by anyone with the pool code',
         widget=forms.CheckboxInput(attrs={'class': 'checkbox'})
     )
     

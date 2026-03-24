@@ -13,6 +13,7 @@
           <div class="has-text-centered-mobile">
             <h1 class="title">{{ pool.name }}</h1>
             <p class="subtitle">
+              {% if can_share_invite_link %}
               <button
                 id="copyPoolInviteBtn"
                 type="button"
@@ -20,7 +21,7 @@
                 title="Copy pool invite link"
                 aria-label="Copy pool invite link"
                 data-copied-text="Copied!"
-                data-pool-path="{% url 'join_pool' slug=pool.slug %}"
+                data-pool-path="{{ invite_join_path }}"
               >
                 <span class="icon pool-invite-copy-icon" aria-hidden="true"><i class="fas fa-link"></i></span>
                 <span class="pool-invite-copy-content">
@@ -28,6 +29,9 @@
                   <span class="pool-invite-copy-tag-text">{{ pool.slug }}</span>
                 </span>
               </button>
+              {% else %}
+              <span class="has-text-grey-light is-size-7">Invite sharing is currently limited to pool admins</span>
+              {% endif %}
             </p>
           </div>
         </div>
