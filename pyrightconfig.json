@@ -1,8 +1,10 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/pyright/main/packages/vscode-pyright/schemas/pyrightconfig.schema.json",
   "typeCheckingMode": "basic",
+  "pythonVersion": "3.12",
   "diagnosticSeverityOverrides": {
-    "reportOptionalMemberAccess": "none"
+    "reportOptionalMemberAccess": "none",
+    "reportAttributeAccessIssue": "none"
   },
   "exclude": [
     "**/node_modules",

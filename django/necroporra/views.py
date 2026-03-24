@@ -243,7 +243,7 @@ def join_pool_api(request, slug):
     if created:
         return JsonResponse(
             {
-                'id': membership.id,
+                'id': membership.pk,
                 'user': {
                     'id': request.user.id,
                     'username': request.user.username,
@@ -422,7 +422,7 @@ def add_celebrity_to_pool_api(request, slug):
     
     # Build response
     response_data = {
-        'id': pool_celebrity.id,
+        'id': pool_celebrity.pk,
         'celebrity': serialize_celebrity_payload(
             celebrity,
             locale=getattr(request, 'LANGUAGE_CODE', 'en'),
@@ -489,7 +489,7 @@ def get_user_picks_api(request, slug):
     predictions_data = []
     for pred in predictions:
         predictions_data.append({
-            'id': pred.id,
+            'id': pred.pk,
             'celebrity': serialize_celebrity_payload(
                 pred.celebrity,
                 locale=getattr(request, 'LANGUAGE_CODE', 'en'),
@@ -503,7 +503,7 @@ def get_user_picks_api(request, slug):
     # Return user info along with predictions
     return JsonResponse({
         'user': {
-            'id': target_user.id,
+            'id': target_user.pk,
             'username': target_user.username,
         },
         'membership': {
@@ -699,7 +699,7 @@ def transfer_admin_api(request, slug):
 
     return JsonResponse({
         'detail': f'{new_admin.username} is now the admin.',
-        'new_admin_id': new_admin.id,
+        'new_admin_id': new_admin.pk,
         'new_admin_username': new_admin.username,
     })
 
