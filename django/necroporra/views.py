@@ -16,6 +16,7 @@ from .models import (
 )
 from .forms import LoginForm, RegisterForm, CreatePoolForm, ChangePasswordForm
 from . import wikidata_utils
+from .serializers_utils import serialize_celebrity_payload, build_celebrity_display_fields
 
 
 # ========== Django Template Views ==========
@@ -162,6 +163,15 @@ def pool_detail_view(request, slug):
     
     # Get user's predictions
     user_predictions = Prediction.objects.filter(pool=pool, user=request.user).select_related('celebrity')
+
+    # Attach display metadata using shared serializer helpers.
+    for prediction in user_predictions:
+        display_fields = build_celebrity_display_fields(
+            prediction.celebrity.birth_date,
+            prediction.celebrity.death_date,
+            locale=getattr(request, 'LANGUAGE_CODE', 'en'),
+        )
+        prediction.celebrity_subtitle_display = display_fields['subtitle_display']
     
     # Calculate user's prediction count and remaining
     user_prediction_count = user_predictions.count()
@@ -413,15 +423,10 @@ def add_celebrity_to_pool_api(request, slug):
     # Build response
     response_data = {
         'id': pool_celebrity.id,
-        'celebrity': {
-            'id': celebrity.id,
-            'name': celebrity.name,
-            'bio': celebrity.bio,
-            'birth_date': str(celebrity.birth_date) if celebrity.birth_date else None,
-            'death_date': str(celebrity.death_date) if celebrity.death_date else None,
-            'wikidata_id': celebrity.wikidata_id,
-            'image_url': celebrity.image_url,
-        },
+        'celebrity': serialize_celebrity_payload(
+            celebrity,
+            locale=getattr(request, 'LANGUAGE_CODE', 'en'),
+        ),
         'added_by': {
             'id': request.user.id,
             'username': request.user.username,
@@ -485,15 +490,10 @@ def get_user_picks_api(request, slug):
     for pred in predictions:
         predictions_data.append({
             'id': pred.id,
-            'celebrity': {
-                'id': pred.celebrity.id,
-                'name': pred.celebrity.name,
-                'bio': pred.celebrity.bio,
-                'birth_date': str(pred.celebrity.birth_date) if pred.celebrity.birth_date else None,
-                'death_date': str(pred.celebrity.death_date) if pred.celebrity.death_date else None,
-                'wikidata_id': pred.celebrity.wikidata_id,
-                'image_url': pred.celebrity.image_url,
-            },
+            'celebrity': serialize_celebrity_payload(
+                pred.celebrity,
+                locale=getattr(request, 'LANGUAGE_CODE', 'en'),
+            ),
             'created_at': pred.created_at.isoformat(),
             'is_correct': pred.is_correct,
             'weight': pred.weight,
@@ -578,9 +578,15 @@ def search_wikidata_api(request):
     
     # Search Wikidata for people
     results = wikidata_utils.search_wikidata_people(query, limit=20)
+
+    # Normalize with shared serializer contract for consistent frontend rendering.
+    serialized_results = [
+        serialize_celebrity_payload(result, locale=getattr(request, 'LANGUAGE_CODE', 'en'))
+        for result in results
+    ]
     
     # Return results (safe=False because results is a list)
-    return JsonResponse(results, safe=False)
+    return JsonResponse(serialized_results, safe=False)
 
 
 # ========== Pool Admin Panel ==========

@@ -166,15 +166,29 @@ function createCelebrityCard(celebrity) {
         `;
     }
     
-    const birthDate = celebrity.birth_date ? `<p class="subtitle is-7">Born: ${celebrity.birth_date}</p>` : '';
+    const birthDateDisplay = celebrity.birth_date_display || '';
     const bio = celebrity.bio ? `<p class="content is-small">${celebrity.bio.substring(0, 100)}${celebrity.bio.length > 100 ? '...' : ''}</p>` : '';
-    const isDeceased = !!celebrity.death_date;
+    const isDeceased = celebrity.is_deceased !== undefined ? !!celebrity.is_deceased : !!celebrity.death_date;
+    const ageText = celebrity.age_display || '';
+    let subtitleText = celebrity.subtitle_display || '';
+    if (!subtitleText) {
+        if (birthDateDisplay && ageText) {
+            subtitleText = `Born on ${birthDateDisplay} | ${ageText}`;
+        } else if (birthDateDisplay) {
+            subtitleText = `Born on ${birthDateDisplay}`;
+        } else {
+            subtitleText = ageText;
+        }
+    }
+    const birthAndAgeLine = subtitleText
+        ? `<p class="subtitle is-7">${subtitleText}</p>`
+        : '';
     
     card.innerHTML = `
         ${imageHtml}
         <div class="card-content">
             <p class="title is-6">${celebrity.name}</p>
-            ${birthDate}
+            ${birthAndAgeLine}
             ${bio}
         </div>
         <footer class="card-footer">
@@ -185,12 +199,21 @@ function createCelebrityCard(celebrity) {
         </footer>
     `;
     
-    // Add click handler only for living celebrities
+    // Make the full card interactive only for living celebrities
     if (!isDeceased) {
-        const pickBtn = card.querySelector('.pick-celebrity-btn');
-        pickBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        card.classList.add('is-clickable');
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', '0');
+
+        card.addEventListener('click', () => {
             handleCelebrityPick(celebrity);
+        });
+
+        card.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleCelebrityPick(celebrity);
+            }
         });
     }
     

@@ -56,8 +56,11 @@ function showConfirmModal(celebrity) {
         `;
     }
     
-    const birthDate = celebrity.birth_date ? `<p><strong>Born:</strong> ${celebrity.birth_date}</p>` : '';
-    const deathDate = celebrity.death_date ? `<p><strong>Died:</strong> ${celebrity.death_date}</p>` : '';
+    const birthDateText = celebrity.birth_date_display || celebrity.birth_date;
+    const deathDateText = celebrity.death_date_display || celebrity.death_date;
+    const birthDate = birthDateText ? `<p><strong>Born:</strong> ${birthDateText}</p>` : '';
+    const deathDate = deathDateText ? `<p><strong>Died:</strong> ${deathDateText}</p>` : '';
+    const ageText = celebrity.age_display ? `<p><strong>${celebrity.age_display}</strong></p>` : '';
     const bio = celebrity.bio ? `<p class="content">${celebrity.bio}</p>` : '';
     
     // Add bet input for distributed scoring mode
@@ -86,6 +89,7 @@ function showConfirmModal(celebrity) {
             <h3 class="title is-4 has-text-centered">${celebrity.name}</h3>
             ${birthDate}
             ${deathDate}
+            ${ageText}
             ${bio}
             ${weightInput}
             <div class="notification is-info is-light mt-4">
