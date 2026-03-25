@@ -8,7 +8,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm, PasswordChangeForm
 from django.core.exceptions import ValidationError
 from django.utils import timezone
-from .models import Pool
+from .models import Pool, get_default_timeframe
 
 
 class LoginForm(AuthenticationForm):
@@ -111,7 +111,7 @@ class CreatePoolForm(forms.ModelForm):
     timeframe_choice = forms.ChoiceField(
         label='Pool Duration',
         choices=Pool.TIMEFRAME_CHOICES,
-        initial='1_year',
+        initial=get_default_timeframe,
         widget=forms.Select(attrs={'class': 'select'})
     )
     
