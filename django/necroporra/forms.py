@@ -92,6 +92,20 @@ class RegisterForm(forms.ModelForm):
         return user
 
 
+class StepperNumberInput(forms.NumberInput):
+    """Reusable number input rendered as a +/- stepper control."""
+
+    template_name = 'necroporra/widgets/number_stepper.html'
+
+    def __init__(self, attrs=None):
+        attrs = attrs.copy() if attrs else {}
+        existing_class = attrs.get('class', '')
+        merged_classes = f"{existing_class} number-stepper__input js-number-stepper-input".strip()
+        attrs['class'] = ' '.join(dict.fromkeys(merged_classes.split()))
+        attrs.setdefault('inputmode', 'numeric')
+        super().__init__(attrs=attrs)
+
+
 class CreatePoolForm(forms.ModelForm):
     """Form for creating a new pool."""
     timeframe_choice = forms.ChoiceField(
@@ -114,7 +128,7 @@ class CreatePoolForm(forms.ModelForm):
         initial=10,
         min_value=1,
         max_value=10,
-        widget=forms.NumberInput(attrs={
+        widget=StepperNumberInput(attrs={
             'class': 'input',
             'min': '1',
             'max': '10',
@@ -125,7 +139,7 @@ class CreatePoolForm(forms.ModelForm):
         label='Lock pool after (days)',
         initial=7,
         required=True,
-        widget=forms.NumberInput(attrs={
+        widget=StepperNumberInput(attrs={
             'class': 'input',
             'min': '1',
             'max': '7',
