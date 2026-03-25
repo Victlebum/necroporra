@@ -120,7 +120,7 @@ class PoolAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            "fields": ("name", "description", "slug"),
+            "fields": ("name", "slug"),
         }),
         ("Administration", {
             "fields": ("creator", "admin"),

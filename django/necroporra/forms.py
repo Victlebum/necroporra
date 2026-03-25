@@ -142,27 +142,20 @@ class CreatePoolForm(forms.ModelForm):
 
     class Meta:
         model = Pool
-        fields = ['name', 'description', 'timeframe_choice', 'is_public', 
+        fields = ['name', 'timeframe_choice', 'is_public', 
                   'max_predictions_per_user', 'scoring_mode']
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'input',
                 'placeholder': 'e.g., Celebrity Deaths 2026',
             }),
-            'description': forms.Textarea(attrs={
-                'class': 'textarea',
-                'placeholder': 'Add details about your pool (optional)',
-                'rows': 4,
-            }),
         }
         help_texts = {
             'name': 'Give your pool a descriptive name',
-            'description': 'Optional: Add any rules or special conditions',
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['description'].required = False
     
     def clean(self):
         """Validate form fields."""

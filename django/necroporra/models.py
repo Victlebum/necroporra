@@ -11,7 +11,7 @@ from django.utils import timezone
 
 
 MAX_POOL_MEMBERS = 20
-INVITATION_EXPIRATION_DAYS = 14
+INVITATION_EXPIRATION_DAYS = 7
 
 
 def get_default_timeframe():
@@ -54,7 +54,6 @@ class Pool(models.Model):
         help_text="The current admin of the pool. Deleting this user deletes the pool."
     )
     name = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
     slug = models.CharField(
         max_length=5,
         unique=True,
@@ -186,8 +185,6 @@ class Pool(models.Model):
 
     def ensure_active_invitation(self, created_by=None):
         """Ensure there is a currently valid active invitation for this pool."""
-        if self.is_public:
-            return None
         invitation = self.get_active_invitation()
         if invitation and invitation.is_valid():
             return invitation

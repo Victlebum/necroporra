@@ -34,19 +34,6 @@
             </div>
 
             <div class="field">
-              <label class="label">Description</label>
-              <div class="control">
-                {{ form.description }}
-              </div>
-              {% if form.description.errors %}
-              <p class="help is-danger">{{ form.description.errors.0 }}</p>
-              {% endif %}
-              {% if form.description.help_text %}
-              <p class="help">{{ form.description.help_text }}</p>
-              {% endif %}
-            </div>
-
-            <div class="field">
               <label class="label">Pool Duration *</label>
               <div class="control">
                 <div class="select is-fullwidth">

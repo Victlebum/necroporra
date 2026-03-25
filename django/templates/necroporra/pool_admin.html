@@ -20,7 +20,6 @@
             </h1>
             <p class="subtitle">
               {{ pool.name }}
-              <span class="tag is-info is-medium ml-2">{{ pool.slug }}</span>
             </p>
           </div>
         </div>
@@ -113,20 +112,17 @@
               <span>Copy</span>
             </button>
           </div>
-          {% if not pool.is_public %}
           <div class="control">
             <button type="button" class="button is-warning" id="btn-regenerate-invite" onclick="regenerateInviteLink()">
               <span class="icon"><i class="fas fa-arrows-rotate"></i></span>
               <span>Regenerate</span>
             </button>
           </div>
-          {% endif %}
         </div>
-        {% if pool.is_public %}
-        <p class="help">Public pools use slug-based join links.</p>
-        {% else %}
-        <p class="help">Invitation links expire after 14 days. Regenerating invalidates the previous link immediately.</p>
-        {% endif %}
+        <p class="help">
+          Invitation links expire after 7 days. Regenerating invalidates the previous link immediately.
+          Current link expires on <span id="inviteExpiryDate">{{ pool_invitation.expires_at|date:"d M Y, H:i" }}</span>.
+        </p>
       </div>
 
       {% if not pool.is_public %}
@@ -486,6 +482,20 @@ async function regenerateInviteLink() {
     const input = document.getElementById('poolInviteInput');
     if (input) {
       input.value = `${window.location.origin}${data.join_path}`;
+    }
+
+    const expiresAt = document.getElementById('inviteExpiryDate');
+    if (expiresAt && data.expires_at) {
+      const parsed = new Date(data.expires_at);
+      if (!Number.isNaN(parsed.getTime())) {
+        expiresAt.textContent = parsed.toLocaleString(undefined, {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+      }
     }
 
     showNotification(data.detail, 'success');

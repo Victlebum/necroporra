@@ -235,7 +235,6 @@ class CreatePoolFormTest(TestCase):
     def _base_form_data():
         return {
             'name': 'Test Pool',
-            'description': 'Test description',
             'timeframe_choice': '1_year',
             'is_public': True,
             'max_predictions_per_user': 5,
@@ -252,7 +251,6 @@ class CreatePoolFormTest(TestCase):
     def test_lock_after_days_validation(self):
         """Test that lock window settings are validated."""
         form_data = self._base_form_data()
-        form_data['description'] = ''
         form_data['lock_after_days'] = None
         form = CreatePoolForm(data=form_data)
         self.assertFalse(form.is_valid())
@@ -362,6 +360,12 @@ class ViewsTest(TestCase):
             limit_date=timezone.now() + timedelta(days=365)
         )
         PoolMembership.objects.create(pool=self.pool, user=self.user)
+
+    def _issue_invite(self, pool=None):
+        """Create and return an active invitation token for a pool."""
+        target_pool = pool or self.pool
+        invitation = PoolInvitation.issue_for_pool(target_pool, created_by=target_pool.admin)
+        return invitation.token
     
     def test_dashboard_view(self):
         """Test dashboard view requires login."""
@@ -387,18 +391,20 @@ class ViewsTest(TestCase):
         response = self.client.get(reverse('create_pool'))
         self.assertEqual(response.status_code, 200)
 
-    def test_join_pool_view_redirects_if_already_member(self):
-        """Existing members should be redirected to pool detail from join page."""
+    def test_join_pool_invite_view_redirects_if_already_member(self):
+        """Existing members should be redirected to pool detail from invite join page."""
+        token = self._issue_invite()
         self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+        response = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, token]))
         self.assertRedirects(response, reverse('pool_detail', args=[self.pool.slug]))
 
-    def test_join_pool_view_renders_confirmation_for_non_member(self):
-        """Non-members should see the browser join confirmation page."""
+    def test_join_pool_invite_view_renders_confirmation_for_non_member(self):
+        """Non-members should see the browser join confirmation page when invite token is valid."""
+        token = self._issue_invite()
         guest = User.objects.create_user(username='guest', password='testpass123')
         self.client.login(username=guest.username, password='testpass123')
 
-        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+        response = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, token]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.pool.name)
         self.assertContains(response, 'Confirm and Join Pool')
@@ -422,33 +428,32 @@ class ViewsTest(TestCase):
         response = self.client.get(reverse('join_pool_invite', args=[self.pool.slug, invitation.token]))
         self.assertEqual(response.status_code, 404)
 
-    def test_private_join_requires_invitation_route(self):
-        """Private pools should not be joinable via slug-only join route."""
-        self.pool.is_public = False
-        self.pool.save(update_fields=['is_public'])
-
-        response = self.client.get(reverse('join_pool', args=[self.pool.slug]))
+    def test_slug_only_join_route_is_not_available(self):
+        """Slug-only join URLs should not be available anymore."""
+        response = self.client.get(f'/join/{self.pool.slug}/')
         self.assertEqual(response.status_code, 404)
 
-    def test_join_pool_view_post_redirects_to_login_when_logged_out(self):
-        """Submitting join confirmation while logged out should redirect to login with next."""
-        response = self.client.post(reverse('join_pool', args=[self.pool.slug]))
+    def test_join_pool_invite_post_redirects_to_login_when_logged_out(self):
+        """Submitting invite-join confirmation while logged out should redirect to login with next."""
+        token = self._issue_invite()
+        response = self.client.post(reverse('join_pool_invite', args=[self.pool.slug, token]))
         self.assertEqual(response.status_code, 302)
         self.assertIn(reverse('login'), response.url)
         self.assertIn('next=', response.url)
 
-    def test_join_pool_view_post_joins_for_authenticated_user(self):
+    def test_join_pool_invite_post_joins_for_authenticated_user(self):
         """Authenticated non-members should join successfully and be redirected."""
+        token = self._issue_invite()
         joiner = User.objects.create_user(username='joiner', password='testpass123')
         self.client.login(username=joiner.username, password='testpass123')
 
-        response = self.client.post(reverse('join_pool', args=[self.pool.slug]))
+        response = self.client.post(reverse('join_pool_invite', args=[self.pool.slug, token]))
         self.assertRedirects(response, reverse('pool_detail', args=[self.pool.slug]))
         self.assertTrue(
             PoolMembership.objects.filter(pool=self.pool, user=joiner).exists()
         )
 
-    def test_join_pool_view_full_pool_disables_join(self):
+    def test_join_pool_invite_full_pool_disables_join(self):
         """Full pools should not allow joining from browser flow."""
         owner = User.objects.create_user(username='owner', password='testpass123')
         full_pool = Pool.objects.create(
@@ -466,12 +471,25 @@ class ViewsTest(TestCase):
 
         late_user = User.objects.create_user(username='latecomer', password='testpass123')
         self.client.login(username='latecomer', password='testpass123')
+        token = self._issue_invite(pool=full_pool)
 
-        response = self.client.post(reverse('join_pool', args=[full_pool.slug]))
+        response = self.client.post(reverse('join_pool_invite', args=[full_pool.slug, token]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'This pool is full')
         self.assertFalse(
             PoolMembership.objects.filter(pool=full_pool, user=late_user).exists()
+        )
+
+    def test_join_pool_api_post_is_denied(self):
+        """Slug-based API joins should be blocked in favor of invitation links."""
+        joiner = User.objects.create_user(username='apijoiner', password='testpass123')
+        self.client.login(username='apijoiner', password='testpass123')
+
+        response = self.client.post(reverse('api_join_pool', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 403)
+        self.assertIn('invitation link', response.json()['detail'])
+        self.assertFalse(
+            PoolMembership.objects.filter(pool=self.pool, user=joiner).exists()
         )
 
     def test_regenerate_invite_requires_pool_admin(self):
@@ -552,7 +570,8 @@ class ViewsTest(TestCase):
 
     def test_login_view_respects_next_redirect(self):
         """Custom login view should redirect to a safe next URL after login."""
-        target = reverse('join_pool', args=[self.pool.slug])
+        token = self._issue_invite()
+        target = reverse('join_pool_invite', args=[self.pool.slug, token])
         response = self.client.post(
             reverse('login'),
             {
@@ -575,7 +594,6 @@ class ViewsTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.post(reverse('create_pool'), {
             'name': 'Invalid End Of Year Pool',
-            'description': 'Should fail validation',
             'timeframe_choice': 'end_of_year',
             'is_public': True,
             'max_predictions_per_user': 5,
@@ -697,7 +715,6 @@ class IntegrationTest(TestCase):
         # Create pool
         response = self.client.post(reverse('create_pool'), {
             'name': 'Integration Test Pool',
-            'description': 'Test description',
             'timeframe_choice': '1_year',
             'is_public': True,
             'max_predictions_per_user': 5,
