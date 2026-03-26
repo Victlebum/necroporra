@@ -211,7 +211,10 @@ def pool_detail_view(request, slug):
         'celebrity_count': pool.celebrities.count(),
         'prediction_count': pool.predictions.count(),
     }
-    can_share_invite_link = pool.is_public or request.user == pool.admin or pool.allow_member_invite_links
+    can_share_invite_link = (
+        (pool.is_public or request.user == pool.admin or pool.allow_member_invite_links)
+        and not pool.is_locked
+    )
     invite_join_path = None
     if can_share_invite_link:
         pool_invitation = pool.ensure_active_invitation(created_by=pool.admin)
@@ -247,6 +250,9 @@ def index(request):
 
 def _attempt_pool_join(pool, user):
     """Attempt to add a user to a pool and return status metadata."""
+    if pool.is_locked:
+        return None, 'locked'
+
     if not pool.is_pool_active():
         return None, 'inactive'
 
@@ -288,7 +294,7 @@ def join_pool_invite_view(request, slug, invitation):
         'prediction_count': pool.predictions.count(),
     }
 
-    can_join = is_active and stats['member_count'] < MAX_POOL_MEMBERS
+    can_join = is_active and not pool.is_locked and stats['member_count'] < MAX_POOL_MEMBERS
     join_error = None
 
     if request.method == 'POST':
@@ -308,6 +314,9 @@ def join_pool_invite_view(request, slug, invitation):
             can_join = False
         elif status == 'inactive':
             join_error = 'This pool has ended and is no longer accepting new members.'
+            can_join = False
+        elif status == 'locked':
+            join_error = 'This pool is closed and is no longer accepting new members.'
             can_join = False
 
     return render(request, 'necroporra/join_pool.html', {
@@ -677,8 +686,12 @@ def pool_admin_view(request, slug):
 
     memberships = pool.memberships.select_related('user').order_by('-total_points', '-wins')
     pool_celebrities = pool.celebrities.select_related('celebrity').order_by('celebrity__name')
-    pool_invitation = pool.ensure_active_invitation(created_by=request.user)
-    invite_join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': pool_invitation.token})
+    if pool.is_locked:
+        pool_invitation = None
+        invite_join_path = None
+    else:
+        pool_invitation = pool.ensure_active_invitation(created_by=request.user)
+        invite_join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': pool_invitation.token})
 
     return render(request, 'necroporra/pool_admin.html', {
         'pool': pool,
@@ -859,6 +872,9 @@ def regenerate_invitation_api(request, slug):
     if request.user != pool.admin:
         return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
 
+    if pool.is_locked:
+        return JsonResponse({'detail': 'This pool is closed. Invitation links are disabled.'}, status=400)
+
     invitation = PoolInvitation.issue_for_pool(pool, created_by=request.user)
     join_path = reverse('join_pool_invite', kwargs={'slug': pool.slug, 'invitation': invitation.token})
 
@@ -878,6 +894,9 @@ def toggle_member_invite_links_api(request, slug):
 
     if request.user != pool.admin:
         return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
+
+    if pool.is_locked:
+        return JsonResponse({'detail': 'This pool is closed. Invite-link sharing settings are disabled.'}, status=400)
 
     if pool.is_public:
         return JsonResponse({'detail': 'This setting only applies to private pools.'}, status=400)

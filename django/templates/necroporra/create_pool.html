@@ -21,7 +21,7 @@
             {% endif %}
 
             <div class="field">
-              <label class="label">Pool Name *</label>
+              <label class="label">Pool Name</label>
               <div class="control">
                 {{ form.name }}
               </div>
@@ -34,7 +34,7 @@
             </div>
 
             <div class="field">
-              <label class="label">Pool Duration *</label>
+              <label class="label">Pool Duration</label>
               <div class="control">
                 <div class="select is-fullwidth">
                   {{ form.timeframe_choice }}
@@ -43,11 +43,11 @@
               {% if form.timeframe_choice.errors %}
               <p class="help is-danger">{{ form.timeframe_choice.errors.0 }}</p>
               {% endif %}
-              <p class="help">When the pool will end and stop accepting new predictions</p>
+              <p class="help">When the pool will end and stop accepting new predictions.</p>
             </div>
 
             <div class="field">
-              <label class="label">Max Predictions Per User *</label>
+              <label class="label">Max Predictions Per User</label>
               <div class="control create-pool-inline-stepper create-pool-inline-stepper--predictions">
                 {{ form.max_predictions_per_user }}
                 <span class="create-pool-inline-stepper__text">predictions per user</span>
@@ -55,7 +55,7 @@
               {% if form.max_predictions_per_user.errors %}
               <p class="help is-danger">{{ form.max_predictions_per_user.errors.0 }}</p>
               {% endif %}
-              <p class="help">Maximum number of predictions each player can make (1-10)</p>
+              <p class="help">Maximum number of predictions each player can make (1-10).</p>
             </div>
 
             <div class="field">
@@ -100,7 +100,7 @@
               {% if form.lock_after_days.errors %}
               <p class="help is-danger">{{ form.lock_after_days.errors.0 }}</p>
               {% endif %}
-              <p class="help">New pools start open. Enter 1-7 days before the pool closes permanently. While open, players can edit picks but cannot see each other's picks. Once closed, picks become visible and editing is disabled. Closing timing must leave at least one full active day before pool end.</p>
+              <p class="help">New pools start open. Set 1-7 days until the pool closes. While open, players can edit picks but cannot see each other's picks. Once closed, picks are visible and editing is disabled.</p>
             </div>
 
             <div class="field">

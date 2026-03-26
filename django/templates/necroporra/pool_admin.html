@@ -94,8 +94,44 @@
       </div>
 
       <hr class="my-4">
+      {% if pool.is_locked %}
+      <div class="notification is-warning is-light mb-3">
+        <p>
+          <strong>Invitations disabled:</strong>
+          This pool is closed, so new members cannot join and invitation controls are disabled.
+        </p>
+      </div>
       <div class="field mb-3">
         <label class="label">Current Join Link</label>
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input
+              id="poolInviteInput"
+              class="input"
+              type="text"
+              readonly
+              disabled
+              value="Invitation links unavailable while pool is closed"
+            >
+          </div>
+          <div class="control">
+            <button type="button" class="button" disabled aria-disabled="true">
+              <span class="icon"><i class="fas fa-copy"></i></span>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="control">
+            <button type="button" class="button is-warning" id="btn-regenerate-invite" disabled aria-disabled="true">
+              <span class="icon"><i class="fas fa-arrows-rotate"></i></span>
+              <span>Regenerate</span>
+            </button>
+          </div>
+        </div>
+        <p class="help">Reopen is not available; this pool remains closed after locking.</p>
+      </div>
+      {% else %}
+      <div class="field mb-3">
+        <label class="label">Join Link</label>
         <div class="field has-addons">
           <div class="control is-expanded">
             <input
@@ -155,6 +191,7 @@
         <span class="icon"><i class="fas fa-user-shield"></i></span>
         <span id="memberInviteSharingActionLabel">{% if pool.allow_member_invite_links %}Disable member access{% else %}Enable member access{% endif %}</span>
       </button>
+      {% endif %}
       {% endif %}
     </div>
 

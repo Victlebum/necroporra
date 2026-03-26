@@ -480,6 +480,56 @@ class ViewsTest(TestCase):
             PoolMembership.objects.filter(pool=full_pool, user=late_user).exists()
         )
 
+    def test_join_pool_invite_locked_pool_disables_join(self):
+        """Locked pools should not allow joining from browser flow."""
+        owner = User.objects.create_user(username='lockedowner', password='testpass123')
+        locked_pool = Pool.objects.create(
+            creator=owner,
+            admin=owner,
+            name='Locked Pool',
+            slug='LOCKED1',
+            limit_date=timezone.now() + timedelta(days=30),
+            is_locked=True,
+            lock_date=timezone.now(),
+        )
+        PoolMembership.objects.create(pool=locked_pool, user=owner)
+
+        late_user = User.objects.create_user(username='latejoiner', password='testpass123')
+        self.client.login(username='latejoiner', password='testpass123')
+        token = self._issue_invite(pool=locked_pool)
+
+        response = self.client.post(reverse('join_pool_invite', args=[locked_pool.slug, token]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'This pool is closed and is no longer accepting new members.')
+        self.assertFalse(
+            PoolMembership.objects.filter(pool=locked_pool, user=late_user).exists()
+        )
+
+    def test_pool_detail_hides_invite_share_widget_when_locked(self):
+        """Locked pools should not show the invite-share widget in pool detail."""
+        self.pool.is_locked = True
+        self.pool.lock_date = timezone.now()
+        self.pool.save(update_fields=['is_locked', 'lock_date'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('pool_detail', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, 'id="copyPoolInviteBtn"', html=False)
+        self.assertContains(response, 'This pool is closed, so invite sharing is disabled')
+
+    def test_pool_admin_shows_disabled_invite_state_when_locked(self):
+        """Locked pools should show disabled invitation controls in admin panel."""
+        self.pool.is_locked = True
+        self.pool.lock_date = timezone.now()
+        self.pool.save(update_fields=['is_locked', 'lock_date'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.get(reverse('pool_admin', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Invitations disabled:')
+        self.assertContains(response, 'Invitation links unavailable while pool is closed')
+        self.assertNotContains(response, 'onclick="regenerateInviteLink()"', html=False)
+
     def test_join_pool_api_post_is_denied(self):
         """Slug-based API joins should be blocked in favor of invitation links."""
         joiner = User.objects.create_user(username='apijoiner', password='testpass123')
@@ -531,6 +581,17 @@ class ViewsTest(TestCase):
         self.assertEqual(valid_join.status_code, 302)
         self.assertRedirects(valid_join, reverse('pool_detail', args=[self.pool.slug]))
 
+    def test_regenerate_invite_rejected_for_locked_pool(self):
+        """Closed pools should reject invitation regeneration."""
+        self.pool.is_locked = True
+        self.pool.lock_date = timezone.now()
+        self.pool.save(update_fields=['is_locked', 'lock_date'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('api_regenerate_invite', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invitation links are disabled', response.json()['detail'])
+
     def test_toggle_member_invite_links_requires_pool_admin(self):
         """Only private pool admins can toggle member invite-link sharing."""
         self.pool.is_public = False
@@ -561,6 +622,17 @@ class ViewsTest(TestCase):
         self.client.login(username='testuser', password='testpass123')
         response = self.client.post(reverse('api_toggle_member_invite_links', args=[self.pool.slug]))
         self.assertEqual(response.status_code, 400)
+
+    def test_toggle_member_invite_links_rejected_for_locked_pool(self):
+        """Closed pools should reject invite-link sharing toggle API."""
+        self.pool.is_locked = True
+        self.pool.lock_date = timezone.now()
+        self.pool.save(update_fields=['is_locked', 'lock_date'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('api_toggle_member_invite_links', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('Invite-link sharing settings are disabled', response.json()['detail'])
 
     def test_api_join_pool_get_still_returns_405(self):
         """API join route should remain POST-only for AJAX callers."""

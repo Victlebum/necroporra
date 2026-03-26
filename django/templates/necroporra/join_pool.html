@@ -25,6 +25,10 @@
               <span class="icon"><i class="fas fa-user-plus"></i></span>
               {% if can_join %}
               <span>Confirm and Join Pool</span>
+              {% elif pool.is_locked %}
+              <span>This pool is closed</span>
+              {% elif not is_active %}
+              <span>This pool has ended</span>
               {% else %}
               <span>This pool is full</span>
               {% endif %}
