@@ -22,8 +22,11 @@
             <div class="card-content">
               <p class="title is-4">{{ pool_data.pool.name }}</p>
               <p class="subtitle is-6">
-                <span class="tag {% if pool_data.pool.is_pool_active %}is-success{% else %}is-danger{% endif %}">
-                  {% if pool_data.pool.is_pool_active %}Active{% else %}Ended{% endif %}
+                {% if not pool_data.pool.is_pool_active %}
+                  <span class="tag is-danger">Ended</span>
+                {% endif %}
+                <span class="tag {% if not pool_data.pool.is_locked %}is-success{% else %}is-danger{% endif %}">
+                  {% if not pool_data.pool.is_locked %}Open{% else %}Closed{% endif %}
                 </span>
                 <span class="tag {% if pool_data.pool.is_public %}is-white{% else %}is-warning{% endif %}">
                   <i class="fas fa-{% if pool_data.pool.is_public %}globe{% else %}lock{% endif %}"></i>
