@@ -30,7 +30,8 @@
     <div class="container">
       <div class="navbar-brand">
         <a class="navbar-item" href="{% url 'dashboard' %}">
-          <strong>💀 Necroporra</strong>
+          <span class="icon"><i class="fas fa-skull"></i></span>
+          <strong>Necroporra</strong>
         </a>
         <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false" data-target="navbarMenu">
           <span aria-hidden="true"></span>
@@ -41,10 +42,6 @@
 
       <div id="navbarMenu" class="navbar-menu">
         <div class="navbar-start">
-          <a class="navbar-item" href="{% url 'dashboard' %}">
-            <span class="icon"><i class="fas fa-home"></i></span>
-            <span>Dashboard</span>
-          </a>
           <a class="navbar-item" href="{% url 'create_pool' %}">
             <span class="icon"><i class="fas fa-plus"></i></span>
             <span>Create Pool</span>
@@ -62,7 +59,7 @@
             <div class="buttons">
               <form method="post" action="{% url 'logout' %}" style="display: inline;">
                 {% csrf_token %}
-                <button type="submit" class="button is-light">
+                <button type="submit" class="button is-light is-outlined">
                   <span class="icon"><i class="fas fa-sign-out-alt"></i></span>
                   <span>Logout</span>
                 </button>

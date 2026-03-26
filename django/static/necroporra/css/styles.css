@@ -21779,7 +21779,28 @@ has-background-danger.is-hoverable:active {
   background: hsla(var(--bulma-success-h), var(--bulma-success-s), calc(var(--bulma-success-l) + 10%), 0.35);
 }
 
+.brand-home-link {
+  cursor: pointer;
+  gap: 0.35rem;
+}
+.brand-home-link strong {
+  transition: text-decoration-color 0.2s ease;
+}
+.brand-home-link .tag {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+}
+.brand-home-link:hover strong, .brand-home-link:focus-visible strong {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+  text-decoration-color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.9);
+}
+
 @media screen and (max-width: 768px) {
+  .brand-home-link .tag {
+    display: none;
+  }
   .pool-invite-copy-tag {
     min-width: 0;
     width: 100%;
