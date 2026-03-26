@@ -167,6 +167,7 @@ class CreatePoolForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'input',
                 'placeholder': 'e.g., Celebrity Deaths 2026',
+                'autocomplete': 'off',
             }),
         }
         help_texts = {
