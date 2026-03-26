@@ -48,8 +48,9 @@
 
             <div class="field">
               <label class="label">Max Predictions Per User *</label>
-              <div class="control">
+              <div class="control create-pool-inline-stepper create-pool-inline-stepper--predictions">
                 {{ form.max_predictions_per_user }}
+                <span class="create-pool-inline-stepper__text">predictions per user</span>
               </div>
               {% if form.max_predictions_per_user.errors %}
               <p class="help is-danger">{{ form.max_predictions_per_user.errors.0 }}</p>
@@ -58,36 +59,74 @@
             </div>
 
             <div class="field">
-              <label class="checkbox">
-                {{ form.is_public }}
-                Public Pool
-              </label>
-              {% if form.is_public.errors %}
-              <p class="help is-danger">{{ form.is_public.errors.0 }}</p>
+              <label class="label">Pool Visibility</label>
+              <div class="selector-card-grid">
+                {% for choice in form.access_mode %}
+                <label class="selector-card-option">
+                  {{ choice.tag }}
+                  {% if choice.data.value == 'private' %}
+                  <span class="selector-card selector-card--danger">
+                    <span class="icon selector-card-icon" aria-hidden="true">
+                      <i class="fas fa-lock"></i>
+                    </span>
+                    <span class="selector-card-label">Private</span>
+                    <span class="selector-card-description">Only participants can see this pool</span>
+                  </span>
+                  {% else %}
+                  <span class="selector-card selector-card--success">
+                    <span class="icon selector-card-icon" aria-hidden="true">
+                      <i class="fas fa-globe"></i>
+                    </span>
+                    <span class="selector-card-label">Public</span>
+                    <span class="selector-card-description">Anyone can see this pool</span>
+                  </span>
+                  {% endif %}
+                </label>
+                {% endfor %}
+              </div>
+              {% if form.access_mode.errors %}
+              <p class="help is-danger">{{ form.access_mode.errors.0 }}</p>
               {% endif %}
-              <p class="help">{{ form.is_public.help_text }}</p>
+              <p class="help">Private pools are selected by default for safer sharing.</p>
             </div>
 
             <div class="field">
-              <label class="label">Pool Lock</label>
-              <div class="control">
+              <label class="label">Pool Status</label>
+              <div class="control create-pool-inline-stepper create-pool-inline-stepper--lock">
+                <span class="create-pool-inline-stepper__text create-pool-inline-stepper__text--lead">Keep open for the first</span>
                 {{ form.lock_after_days }}
+                <span class="create-pool-inline-stepper__text">days</span>
               </div>
               {% if form.lock_after_days.errors %}
               <p class="help is-danger">{{ form.lock_after_days.errors.0 }}</p>
               {% endif %}
-              <p class="help">New pools start unlocked. Enter 1-7 days before the pool locks permanently. While unlocked, players can edit picks but cannot see each other's picks. Once locked, picks become visible and editing is disabled. Lock timing must leave at least one full active day before pool end.</p>
+              <p class="help">New pools start open. Enter 1-7 days before the pool closes permanently. While open, players can edit picks but cannot see each other's picks. Once closed, picks become visible and editing is disabled. Closing timing must leave at least one full active day before pool end.</p>
             </div>
 
             <div class="field">
               <label class="label">Scoring Mode</label>
-              <div class="control">
+              <div class="selector-card-grid">
                 {% for choice in form.scoring_mode %}
-                <label class="radio">
+                <label class="selector-card-option">
                   {{ choice.tag }}
-                  {{ choice.choice_label }}
+                  {% if choice.data.value == 'simple' %}
+                  <span class="selector-card selector-card--info">
+                    <span class="icon selector-card-icon" aria-hidden="true">
+                      <i class="fas fa-bolt"></i>
+                    </span>
+                    <span class="selector-card-label">Simple</span>
+                    <span class="selector-card-description">1 point per correct prediction</span>
+                  </span>
+                  {% else %}
+                  <span class="selector-card selector-card--warning">
+                    <span class="icon selector-card-icon" aria-hidden="true">
+                      <i class="fas fa-balance-scale"></i>
+                    </span>
+                    <span class="selector-card-label">Distributed</span>
+                    <span class="selector-card-description">Allocate 10 points across picks</span>
+                  </span>
+                  {% endif %}
                 </label>
-                <br>
                 {% endfor %}
               </div>
               {% if form.scoring_mode.errors %}

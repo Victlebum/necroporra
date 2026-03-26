@@ -10,7 +10,7 @@
       {% if pool.is_locked %}
       <button class="button is-light" disabled>
         <span class="icon"><i class="fas fa-lock"></i></span>
-        <span>Predictions Locked</span>
+        <span>Predictions Closed</span>
       </button>
       {% else %}
       <button id="addPredictionBtn" class="button is-primary">
@@ -24,7 +24,7 @@
 
 {% if pool.is_locked %}
 <div class="notification is-warning is-light">
-  <p>This pool is locked. Picks are visible to everyone and prediction edits are disabled.</p>
+  <p>This pool is closed. Picks are visible to everyone and prediction edits are disabled.</p>
 </div>
 {% endif %}
 

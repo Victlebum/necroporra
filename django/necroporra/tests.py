@@ -850,7 +850,7 @@ class AddCelebrityApiWeightValidationTest(TestCase):
 
 
 class PoolLockBehaviorApiTest(TestCase):
-    """Tests for unlocked vs locked behavior around visibility and prediction edits."""
+    """Tests for open vs closed behavior around visibility and prediction edits."""
 
     def setUp(self):
         self.client = Client()
@@ -877,7 +877,7 @@ class PoolLockBehaviorApiTest(TestCase):
             celebrity=self.celebrity,
         )
 
-    def test_user_picks_hidden_while_pool_unlocked(self):
+    def test_user_picks_hidden_while_pool_open(self):
         self.client.login(username='admin', password='testpass123')
 
         response = self.client.get(
@@ -888,7 +888,7 @@ class PoolLockBehaviorApiTest(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertIn('not visible', response.json()['detail'])
 
-    def test_user_picks_visible_after_pool_locked(self):
+    def test_user_picks_visible_after_pool_closed(self):
         self.pool.is_locked = True
         self.pool.save(update_fields=['is_locked'])
         self.client.login(username='admin', password='testpass123')
@@ -901,7 +901,7 @@ class PoolLockBehaviorApiTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['prediction_count'], 1)
 
-    def test_add_prediction_rejected_when_locked(self):
+    def test_add_prediction_rejected_when_closed(self):
         self.pool.is_locked = True
         self.pool.save(update_fields=['is_locked'])
         self.client.login(username='admin', password='testpass123')
@@ -914,9 +914,9 @@ class PoolLockBehaviorApiTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn('locked', response.json()['detail'].lower())
+        self.assertIn('closed', response.json()['detail'].lower())
 
-    def test_delete_prediction_rejected_when_locked(self):
+    def test_delete_prediction_rejected_when_closed(self):
         self.pool.is_locked = True
         self.pool.save(update_fields=['is_locked'])
         self.client.login(username='member', password='testpass123')
@@ -926,7 +926,7 @@ class PoolLockBehaviorApiTest(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
-        self.assertIn('locked', response.json()['detail'].lower())
+        self.assertIn('closed', response.json()['detail'].lower())
 
     def test_admin_can_lock_pool_immediately(self):
         self.client.login(username='admin', password='testpass123')

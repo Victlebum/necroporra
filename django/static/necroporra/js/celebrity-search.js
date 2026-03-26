@@ -39,7 +39,7 @@ function initCelebritySearch(poolSlug, poolId) {
     // Show search form
     addBtn.addEventListener('click', () => {
         if (poolIsLocked) {
-            showNotification('This pool is locked. You can no longer add predictions.', 'warning');
+            showNotification('This pool is closed. You can no longer add predictions.', 'warning');
             return;
         }
         if (remainingPredictions <= 0) {
@@ -366,7 +366,7 @@ function initDeleteButtons() {
 
 async function deletePick(predictionId, btn, originalBtnHtml) {
     if (poolIsLocked) {
-        showNotification('This pool is locked. You can no longer edit predictions.', 'warning');
+        showNotification('This pool is closed. You can no longer edit predictions.', 'warning');
         btn.innerHTML = originalBtnHtml;
         btn.dataset.confirming = 'false';
         return;

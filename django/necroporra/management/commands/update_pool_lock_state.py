@@ -5,10 +5,10 @@ from necroporra.models import Pool
 
 
 class Command(BaseCommand):
-    help = 'Lock pools whose lock date has passed'
+    help = 'Close pools whose close date has passed'
 
     def handle(self, *args, **options):
-        self.stdout.write(self.style.SUCCESS('Updating pool lock state...'))
+        self.stdout.write(self.style.SUCCESS('Updating pool open/closed state...'))
 
         now = timezone.now()
         pools_to_update = Pool.objects.filter(
@@ -23,12 +23,12 @@ class Command(BaseCommand):
             pool.save(update_fields=['is_locked'])
             count += 1
             self.stdout.write(
-                self.style.SUCCESS(f'✓ Pool "{pool.name}" ({pool.slug}) locked')
+                self.style.SUCCESS(f'✓ Pool "{pool.name}" ({pool.slug}) closed')
             )
 
         if count == 0:
-            self.stdout.write(self.style.WARNING('No pools need lock updates'))
+            self.stdout.write(self.style.WARNING('No pools need state updates'))
         else:
             self.stdout.write(
-                self.style.SUCCESS(f'Updated lock state for {count} pool{"s" if count != 1 else ""}')
+                self.style.SUCCESS(f'Updated closed state for {count} pool{"s" if count != 1 else ""}')
             )

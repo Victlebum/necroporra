@@ -355,7 +355,7 @@ def add_celebrity_to_pool_api(request, slug):
 
     if pool.is_locked:
         return JsonResponse(
-            {'detail': 'This pool is locked. You can no longer add predictions.'},
+            {'detail': 'This pool is closed. You can no longer add predictions.'},
             status=400
         )
     
@@ -535,10 +535,10 @@ def get_user_picks_api(request, slug):
             status=403
         )
     
-    # Check if picks are visible (only when locked).
+    # Check if picks are visible (only when closed).
     if not pool.picks_publicly_visible():
         return JsonResponse(
-            {'detail': 'Picks are not visible until this pool locks.'},
+            {'detail': 'Picks are not visible until this pool closes.'},
             status=403
         )
     
@@ -597,7 +597,7 @@ def delete_prediction_api(request, slug, prediction_id):
 
     if pool.is_locked:
         return JsonResponse(
-            {'detail': 'This pool is locked. You can no longer edit predictions.'},
+            {'detail': 'This pool is closed. You can no longer edit predictions.'},
             status=400
         )
 
@@ -841,13 +841,13 @@ def lock_pool_api(request, slug):
         return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
 
     if pool.is_locked:
-        return JsonResponse({'detail': 'Pool is already locked.'}, status=400)
+        return JsonResponse({'detail': 'Pool is already closed.'}, status=400)
 
     pool.is_locked = True
     pool.lock_date = timezone.now()
     pool.save(update_fields=['is_locked', 'lock_date'])
 
-    return JsonResponse({'detail': 'Pool locked. Picks are now visible and prediction edits are closed.'})
+    return JsonResponse({'detail': 'Pool closed. Picks are now visible and prediction edits are closed.'})
 
 
 @require_http_methods(["POST"])

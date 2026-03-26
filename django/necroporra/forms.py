@@ -108,19 +108,24 @@ class StepperNumberInput(forms.NumberInput):
 
 class CreatePoolForm(forms.ModelForm):
     """Form for creating a new pool."""
+    ACCESS_MODE_CHOICES = [
+        ('private', 'Private'),
+        ('public', 'Public'),
+    ]
+
     timeframe_choice = forms.ChoiceField(
         label='Pool Duration',
         choices=Pool.TIMEFRAME_CHOICES,
         initial=get_default_timeframe,
         widget=forms.Select(attrs={'class': 'select'})
     )
-    
-    is_public = forms.BooleanField(
-        label='Public Pool',
-        initial=True,
+
+    access_mode = forms.ChoiceField(
+        label='Pool Visibility',
+        choices=ACCESS_MODE_CHOICES,
+        initial='private',
         required=False,
-        help_text='Public pools can be discovered by anyone with the pool code',
-        widget=forms.CheckboxInput(attrs={'class': 'checkbox'})
+        widget=forms.RadioSelect(attrs={'class': 'selector-card-input'})
     )
     
     max_predictions_per_user = forms.IntegerField(
@@ -136,7 +141,7 @@ class CreatePoolForm(forms.ModelForm):
     )
     
     lock_after_days = forms.IntegerField(
-        label='Lock pool after (days)',
+        label='Close pool after (days)',
         initial=7,
         required=True,
         widget=StepperNumberInput(attrs={
@@ -151,12 +156,12 @@ class CreatePoolForm(forms.ModelForm):
         label='Scoring Mode',
         choices=Pool.SCORING_MODES,
         initial='simple',
-        widget=forms.RadioSelect(attrs={'class': 'radio'})
+        widget=forms.RadioSelect(attrs={'class': 'selector-card-input'})
     )
 
     class Meta:
         model = Pool
-        fields = ['name', 'timeframe_choice', 'is_public', 
+        fields = ['name', 'timeframe_choice',
                   'max_predictions_per_user', 'scoring_mode']
         widgets = {
             'name': forms.TextInput(attrs={
@@ -170,15 +175,29 @@ class CreatePoolForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Keep edit mode aligned with persisted value while defaulting new pools to private.
+        if not self.is_bound and self.instance and self.instance.pk:
+            self.fields['access_mode'].initial = 'public' if self.instance.is_public else 'private'
     
     def clean(self):
         """Validate form fields."""
-        cleaned_data = super().clean()
+        cleaned_data = super().clean() or {}
         timeframe_choice = cleaned_data.get('timeframe_choice')
         lock_after_days = cleaned_data.get('lock_after_days')
+        access_mode = cleaned_data.get('access_mode')
+
+        # Backward compatibility: accept legacy checkbox payloads that still post is_public.
+        if not access_mode:
+            legacy_public_raw = self.data.get('is_public')
+            is_legacy_public = str(legacy_public_raw).strip().lower() in {'1', 'true', 'on', 'yes'}
+            access_mode = 'public' if is_legacy_public else 'private'
+            cleaned_data['access_mode'] = access_mode
+
+        cleaned_data['is_public'] = access_mode == 'public'
 
         if lock_after_days is None:
-            self.add_error('lock_after_days', 'Please specify when the pool should lock (1-7 days)')
+            self.add_error('lock_after_days', 'Please specify when the pool should close (1-7 days)')
         elif lock_after_days < 1 or lock_after_days > 7:
             self.add_error('lock_after_days', 'Days must be between 1 and 7')
 
@@ -195,6 +214,14 @@ class CreatePoolForm(forms.ModelForm):
                 )
         
         return cleaned_data
+
+    def save(self, commit=True):
+        """Persist access_mode as Pool.is_public while leaving UI field decoupled."""
+        instance = super().save(commit=False)
+        instance.is_public = self.cleaned_data.get('is_public', False)
+        if commit:
+            instance.save()
+        return instance
 
 
 class ChangePasswordForm(PasswordChangeForm):

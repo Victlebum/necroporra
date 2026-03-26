@@ -21853,6 +21853,110 @@ has-background-danger.is-hoverable:active {
   border-color: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.5);
 }
 
+.selector-card-grid {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.selector-card-option {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.selector-card-option .selector-card-input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.selector-card {
+  min-height: 9rem;
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid hsl(0, 8%, 20%);
+  border-radius: 0.5rem;
+  background: hsl(0, 5%, 12%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 0.4rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.selector-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: hsl(0, 5%, 16%);
+  color: hsl(0, 12%, 82%);
+}
+
+.selector-card-label {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: hsl(0, 14%, 90%);
+}
+
+.selector-card-description {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  color: hsl(0, 10%, 58%);
+}
+
+.selector-card-option:hover .selector-card {
+  border-color: hsl(0, 10%, 34%);
+  transform: translateY(-1px);
+}
+
+.selector-card-option .selector-card-input:focus-visible + .selector-card {
+  outline: 2px solid hsl(0, 8%, 74%);
+  outline-offset: 2px;
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card {
+  border-width: 2px;
+  box-shadow: 0 0 0 1px hsla(0, 5%, 80%, 0.14), 0 8px 20px hsla(0, 0%, 0%, 0.45);
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card .selector-card-description {
+  color: hsl(0, 12%, 76%);
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card.selector-card--success {
+  border-color: hsla(var(--bulma-success-h), var(--bulma-success-s), var(--bulma-success-l), 0.72);
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card.selector-card--danger {
+  border-color: hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.74);
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card.selector-card--warning {
+  border-color: hsla(var(--bulma-warning-h), var(--bulma-warning-s), var(--bulma-warning-l), 0.72);
+}
+
+.selector-card-option .selector-card-input:checked + .selector-card.selector-card--info {
+  border-color: hsla(var(--bulma-info-h), var(--bulma-info-s), var(--bulma-info-l), 0.72);
+}
+
+@media screen and (max-width: 768px) {
+  .selector-card-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .modal.is-active .modal-background {
   animation: fadeIn 0.3s ease-in-out;
 }
@@ -22001,6 +22105,39 @@ main {
   cursor: not-allowed;
 }
 
+.create-pool-inline-stepper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  width: 100%;
+  gap: 0.65rem;
+}
+
+.create-pool-inline-stepper .number-stepper {
+  grid-column: 2;
+  justify-self: center;
+  margin-inline: 0;
+  flex: 0 0 auto;
+}
+
+.create-pool-inline-stepper__text {
+  grid-row: 1;
+  color: var(--bulma-text-strong);
+  line-height: 1.35;
+}
+
+.create-pool-inline-stepper__text--lead {
+  grid-column: 1;
+  justify-self: end;
+  text-align: right;
+}
+
+.create-pool-inline-stepper__text:not(.create-pool-inline-stepper__text--lead) {
+  grid-column: 3;
+  justify-self: start;
+  text-align: left;
+}
+
 @media screen and (max-width: 768px) {
   .number-stepper {
     max-width: 11rem;
@@ -22011,6 +22148,25 @@ main {
   }
   .number-stepper__value-control {
     width: 5rem;
+  }
+  .create-pool-inline-stepper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 0.5rem;
+  }
+  .create-pool-inline-stepper .number-stepper {
+    max-width: none;
+  }
+  .create-pool-inline-stepper__text {
+    font-size: 0.95rem;
+    text-align: center;
+  }
+  .create-pool-inline-stepper__text--lead,
+  .create-pool-inline-stepper__text:not(.create-pool-inline-stepper__text--lead) {
+    justify-self: center;
   }
 }
 @media screen and (max-width: 768px) {

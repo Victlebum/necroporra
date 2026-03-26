@@ -131,7 +131,7 @@ class PoolAdmin(admin.ModelAdmin):
         ("Scoring & Limits", {
             "fields": ("scoring_mode", "max_predictions_per_user"),
         }),
-        ("Locking", {
+        ("Open/Closed Status", {
             "fields": ("is_public", "is_locked", "lock_after_days", "lock_date"),
         }),
         ("Timestamps", {

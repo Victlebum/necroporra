@@ -90,21 +90,21 @@ class Pool(models.Model):
         help_text="Maximum number of predictions each user can make"
     )
     
-    # Pool lock settings
+    # Pool open/closed settings
     is_locked = models.BooleanField(
         default=False,
-        help_text="Whether this pool is locked (picks are visible and predictions are frozen)"
+        help_text="Whether this pool is closed (picks are visible and predictions are frozen)"
     )
     lock_after_days = models.IntegerField(
         null=True,
         blank=True,
         validators=[MinValueValidator(1), MaxValueValidator(7)],
-        help_text="Days after pool creation when the pool locks (1-7)"
+        help_text="Days after pool creation when the pool closes (1-7)"
     )
     lock_date = models.DateTimeField(
         null=True,
         blank=True,
-        help_text="The date when the pool will lock"
+        help_text="The date when the pool will close"
     )
     
     # Scoring mode
@@ -159,11 +159,11 @@ class Pool(models.Model):
         return self.created_at + timedelta(days=self.lock_after_days)
 
     def picks_publicly_visible(self):
-        """Picks are visible to all members only after the pool locks."""
+        """Picks are visible to all members only after the pool closes."""
         return self.is_locked
 
     def predictions_editable(self):
-        """Predictions can only be edited while the pool is unlocked."""
+        """Predictions can only be edited while the pool is open."""
         return not self.is_locked
     
     def is_pool_active(self):
