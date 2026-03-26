@@ -11,7 +11,7 @@
           <h1 class="title">Create a New Pool</h1>
           <p class="subtitle">Start your dead pool with friends</p>
 
-          <form method="post">
+          <form method="post" class="create-pool-form">
             {% csrf_token %}
 
             {% if form.non_field_errors %}
@@ -20,7 +20,7 @@
             </div>
             {% endif %}
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Pool Name</label>
               <div class="control">
                 {{ form.name }}
@@ -33,7 +33,7 @@
               {% endif %}
             </div>
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Pool Duration</label>
               <div class="control">
                 <div class="select is-fullwidth">
@@ -46,9 +46,10 @@
               <p class="help">When the pool will end and stop accepting new predictions.</p>
             </div>
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Max Predictions Per User</label>
-              <div class="control create-pool-inline-stepper create-pool-inline-stepper--predictions">
+              <div class="control create-pool-inline-stepper">
+                <span class="create-pool-inline-stepper__text create-pool-inline-stepper__text--lead">Allow</span>
                 {{ form.max_predictions_per_user }}
                 <span class="create-pool-inline-stepper__text">predictions per user</span>
               </div>
@@ -58,7 +59,7 @@
               <p class="help">Maximum number of predictions each player can make (1-10).</p>
             </div>
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Pool Visibility</label>
               <div class="selector-card-grid">
                 {% for choice in form.access_mode %}
@@ -90,9 +91,9 @@
               <p class="help">Private pools are selected by default for safer sharing.</p>
             </div>
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Pool Status</label>
-              <div class="control create-pool-inline-stepper create-pool-inline-stepper--lock">
+              <div class="control create-pool-inline-stepper">
                 <span class="create-pool-inline-stepper__text create-pool-inline-stepper__text--lead">Keep open for the first</span>
                 {{ form.lock_after_days }}
                 <span class="create-pool-inline-stepper__text">days</span>
@@ -103,7 +104,7 @@
               <p class="help">New pools start open. Set 1-7 days until the pool closes. While open, players can edit picks but cannot see each other's picks. Once closed, picks are visible and editing is disabled.</p>
             </div>
 
-            <div class="field">
+            <div class="field mb-5">
               <label class="label">Scoring Mode</label>
               <div class="selector-card-grid">
                 {% for choice in form.scoring_mode %}
@@ -150,7 +151,7 @@
 
           <div class="field">
             <div class="control">
-              <a href="{% url 'dashboard' %}" class="button is-light is-fullwidth">
+              <a href="{% url 'dashboard' %}" class="button is-light is-fullwidth is-outlined">
                 <span class="icon">
                   <i class="fas fa-times"></i>
                 </span>
