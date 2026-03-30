@@ -723,4 +723,54 @@ main {
   .level-right .level-item {
     text-align: center;
   }
+
+  .pool-admin-join-link-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pool-admin-join-link-controls .control.is-expanded {
+    display: block;
+    width: 100%;
+    max-width: 28rem;
+    flex: 0 0 auto;
+  }
+
+  .pool-admin-join-link-controls .control.is-expanded .input {
+    width: 100%;
+  }
+
+  .pool-admin-join-link-controls .control:not(.is-expanded) {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .pool-admin-join-link-controls .control:not(:last-child) {
+    margin-bottom: 0;
+  }
+
+  .pool-admin-join-link-controls .button,
+  .pool-admin-join-link-controls .input {
+    border-radius: var(--bulma-radius) !important;
+  }
+
+  .pool-admin-mobile-centered-button,
+  .pool-visibility-action {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .pool-visibility-description,
+  .pool-visibility-controls {
+    text-align: center;
+  }
+
+  .pool-visibility-controls .tag {
+    margin-left: auto;
+    margin-right: auto;
+  }
 }

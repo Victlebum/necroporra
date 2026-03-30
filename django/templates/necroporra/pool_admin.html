@@ -66,7 +66,7 @@
               </td>
             </tr>
             <tr>
-              <th scope="row">Pool</th>
+              <th scope="row">Phase</th>
               <td>
                 {% if pool.is_locked %}
                   <span class="tag is-danger">Closed</span>
@@ -92,6 +92,38 @@
       </div>
 
       <hr class="my-4">
+      <div class="columns is-vcentered mb-3 pool-visibility-columns">
+        <div class="column is-three-quarters pool-visibility-description">
+          <p class="has-text-weight-semibold">Pool Visibility</p>
+          <p class="is-size-7 has-text-grey">Public pools can simply be seen by anyone, while private pools can only be accessed by the pool's members.</p>
+        </div>
+        <div class="column is-one-quarter has-text-right-desktop pool-visibility-controls">
+          <span
+            id="poolVisibilityBadge"
+            class="tag is-medium {% if pool.is_public %}is-info{% else %}is-warning{% endif %}"
+          >{% if pool.is_public %}Public{% else %}Private{% endif %}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="button pool-visibility-action {% if pool.is_public %}is-warning{% else %}is-info{% endif %}"
+        id="btn-toggle-pool-visibility"
+        onclick="confirmTogglePoolVisibility()"
+      >
+        <span class="icon"><i class="fas fa-globe"></i></span>
+        <span id="poolVisibilityActionLabel">{% if pool.is_public %}Make Private{% else %}Make Public{% endif %}</span>
+      </button>
+    </div>
+
+    <div class="box mb-5">
+      <h2 class="title is-5 mb-3">
+        <span class="icon-text">
+          <span class="icon"><i class="fas fa-share-nodes"></i></span>
+          <span>Sharing</span>
+        </span>
+      </h2>
+
       {% if pool.is_locked %}
       <div class="notification is-warning is-light mb-3">
         <p>
@@ -99,9 +131,9 @@
           This pool is closed, so new members cannot join and invitation controls are disabled.
         </p>
       </div>
-      <div class="field mb-3">
+      <div class="field mb-3 pool-admin-join-link-field">
         <label class="label">Current Join Link</label>
-        <div class="field has-addons">
+        <div class="field has-addons pool-admin-join-link-controls">
           <div class="control is-expanded">
             <input
               id="poolInviteInput"
@@ -128,9 +160,9 @@
         <p class="help">Reopen is not available; this pool remains closed after locking.</p>
       </div>
       {% else %}
-      <div class="field mb-3">
+      <div class="field mb-3 pool-admin-join-link-field">
         <label class="label">Join Link</label>
-        <div class="field has-addons">
+        <div class="field has-addons pool-admin-join-link-controls">
           <div class="control is-expanded">
             <input
               id="poolInviteInput"
@@ -182,7 +214,7 @@
 
       <button
         type="button"
-        class="button {% if pool.allow_member_invite_links %}is-warning{% else %}is-success{% endif %}"
+        class="button pool-admin-mobile-centered-button {% if pool.allow_member_invite_links %}is-warning{% else %}is-success{% endif %}"
         id="btn-toggle-member-invite-links"
         onclick="toggleMemberInviteLinks()"
       >
@@ -191,31 +223,6 @@
       </button>
       {% endif %}
       {% endif %}
-    </div>
-
-    <div class="box mb-5">
-      <div class="columns is-vcentered mb-3">
-        <div class="column is-three-quarters">
-          <p class="has-text-weight-semibold">Pool Visibility</p>
-          <p class="is-size-7 has-text-grey">Public pools can simply be seen by anyone, while private pools can only be accessed by the pool's members.</p>
-        </div>
-        <div class="column is-one-quarter has-text-right-desktop">
-          <span
-            id="poolVisibilityBadge"
-            class="tag is-medium {% if pool.is_public %}is-info{% else %}is-warning{% endif %}"
-          >{% if pool.is_public %}Public{% else %}Private{% endif %}</span>
-        </div>
-      </div>
-
-      <button
-        type="button"
-        class="button {% if pool.is_public %}is-warning{% else %}is-info{% endif %}"
-        id="btn-toggle-pool-visibility"
-        onclick="confirmTogglePoolVisibility()"
-      >
-        <span class="icon"><i class="fas fa-globe"></i></span>
-        <span id="poolVisibilityActionLabel">{% if pool.is_public %}Make Private{% else %}Make Public{% endif %}</span>
-      </button>
     </div>
 
     {# Members #}
