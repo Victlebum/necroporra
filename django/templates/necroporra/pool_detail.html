@@ -11,7 +11,7 @@
       <div class="level-left">
         <div class="level-item">
           <div class="has-text-centered-mobile">
-            <h1 class="title">{{ pool.name }}</h1>
+            <h1 class="title mb-1">{{ pool.name }}</h1>
             <p class="subtitle">
               {% if can_share_invite_link %}
               <button
@@ -51,9 +51,7 @@
         {% endif %}
         <div class="level-item">
           <a href="{% url 'dashboard' %}" class="button">
-            <span class="icon">
-              <i class="fas fa-arrow-left"></i>
-            </span>
+            <span class="icon"><i class="fas fa-arrow-left"></i></span>
             <span>Back to Dashboard</span>
           </a>
         </div>

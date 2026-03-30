@@ -20,7 +20,7 @@
         <a href="{% url 'pool_detail' slug=pool_data.pool.slug %}">
           <div class="card pool-card">
             <div class="card-content">
-              <p class="title is-4">{{ pool_data.pool.name }}</p>
+              <p class="title is-4 mb-1">{{ pool_data.pool.name }}</p>
               <p class="subtitle is-6">
                 {% if not pool_data.pool.is_pool_active %}
                   <span class="tag is-danger">Ended</span>
