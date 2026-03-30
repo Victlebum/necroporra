@@ -6,7 +6,7 @@
 // Palette:
 //   Midnight Soot hsl(0, 6%, 4%)    #0B0A0A  — page background
 //   Crypt Stone   hsl(0, 6%, 7%)    #131111  — card surfaces
-//   Pumpkin Ember hsl(24, 100%, 42%)#D65A00  — primary / CTAs
+//   Eldritch Plum hsl(292, 64%, 44%) #A428B8  — primary / CTAs
 //   Harvest Flame hsl(28, 96%, 55%) #FB8520  — links
 //   Blood Red     hsl(356, 85%, 46%)#D91323  — danger
 //   Grave Moss    hsl(95, 42%, 40%) #5E913B  — success
@@ -37,15 +37,15 @@
   --bulma-body-color:            hsl(0, 10%, 72%);
   --bulma-body-size:             1rem;
 
-  // ── Primary — Pumpkin Ember ─────────────────────────────
-  --bulma-primary-h: 24;
-  --bulma-primary-s: 100%;
-  --bulma-primary-l: 42%;            // #D65A00
+  // ── Primary — Eldritch Plum ─────────────────────────────
+  --bulma-primary-h: 292;
+  --bulma-primary-s: 64%;
+  --bulma-primary-l: 44%;            // #A428B8
   --bulma-primary-invert-l: 95%;     // near-white text on buttons
   --bulma-primary-light-l: 13%;
   --bulma-primary-dark-l: 28%;
   --bulma-primary-soft-l: 18%;
-  --bulma-primary-bold-l: 52%;
+  --bulma-primary-bold-l: 54%;
 
   // ── Link — Harvest Flame ────────────────────────────────
   --bulma-link-h: 28;
@@ -116,7 +116,7 @@
   // ── Navbar ───────────────────────────────────────────────
   --bulma-navbar-background-color: hsl(0, 6%, 8%);
   --bulma-navbar-item-color:        hsl(0, 10%, 72%);
-  --bulma-navbar-item-hover-background-color: hsl(24, 100%, 18%); // ember hover
+  --bulma-navbar-item-hover-background-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 18%);
   --bulma-navbar-item-hover-color:  hsl(0, 10%, 92%);
 
   // ── Footer ───────────────────────────────────────────────
@@ -130,13 +130,13 @@
 
   // ── Input / Control ──────────────────────────────────────
   --bulma-input-background-color:   hsl(0, 10%, 6%);
-  --bulma-input-border-color:       hsl(24, 38%, 24%);
+  --bulma-input-border-color:       hsl(var(--bulma-primary-h), 36%, 24%);
   --bulma-input-color:              hsl(0, 14%, 82%);
   --bulma-input-placeholder-color:  hsl(0, 12%, 44%);
-  --bulma-input-hover-border-color: hsl(24, 96%, 42%);
-  --bulma-input-focus-border-color: hsl(24, 100%, 48%);
+  --bulma-input-hover-border-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 42%);
+  --bulma-input-focus-border-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 48%);
   --bulma-input-focus-shadow-size:  0 0 0 0.125em;
-  --bulma-input-focus-shadow-color: hsla(24, 100%, 46%, 0.35);
+  --bulma-input-focus-shadow-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), 46%, 0.35);
 }
 
 // Title & subtitle — pale parchment so headings pop

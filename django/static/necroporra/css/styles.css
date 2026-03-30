@@ -21576,14 +21576,14 @@ has-background-danger.is-hoverable:active {
   --bulma-body-background-color: hsl(0, 6%, 4%);
   --bulma-body-color: hsl(0, 10%, 72%);
   --bulma-body-size: 1rem;
-  --bulma-primary-h: 24;
-  --bulma-primary-s: 100%;
-  --bulma-primary-l: 42%;
+  --bulma-primary-h: 292;
+  --bulma-primary-s: 64%;
+  --bulma-primary-l: 44%;
   --bulma-primary-invert-l: 95%;
   --bulma-primary-light-l: 13%;
   --bulma-primary-dark-l: 28%;
   --bulma-primary-soft-l: 18%;
-  --bulma-primary-bold-l: 52%;
+  --bulma-primary-bold-l: 54%;
   --bulma-link-h: 28;
   --bulma-link-s: 96%;
   --bulma-link-l: 55%;
@@ -21638,19 +21638,19 @@ has-background-danger.is-hoverable:active {
   --bulma-shadow-l: 0%;
   --bulma-navbar-background-color: hsl(0, 6%, 8%);
   --bulma-navbar-item-color: hsl(0, 10%, 72%);
-  --bulma-navbar-item-hover-background-color: hsl(24, 100%, 18%);
+  --bulma-navbar-item-hover-background-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 18%);
   --bulma-navbar-item-hover-color: hsl(0, 10%, 92%);
   --bulma-footer-background-color: hsl(0, 10%, 3%);
   --bulma-footer-color: hsl(0, 12%, 56%);
   --bulma-footer-padding: 2rem 1.5rem;
   --bulma-input-background-color: hsl(0, 10%, 6%);
-  --bulma-input-border-color: hsl(24, 38%, 24%);
+  --bulma-input-border-color: hsl(var(--bulma-primary-h), 36%, 24%);
   --bulma-input-color: hsl(0, 14%, 82%);
   --bulma-input-placeholder-color: hsl(0, 12%, 44%);
-  --bulma-input-hover-border-color: hsl(24, 96%, 42%);
-  --bulma-input-focus-border-color: hsl(24, 100%, 48%);
+  --bulma-input-hover-border-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 42%);
+  --bulma-input-focus-border-color: hsl(var(--bulma-primary-h), var(--bulma-primary-s), 48%);
   --bulma-input-focus-shadow-size: 0 0 0 0.125em;
-  --bulma-input-focus-shadow-color: hsla(24, 100%, 46%, 0.35);
+  --bulma-input-focus-shadow-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), 46%, 0.35);
 }
 
 .title {
