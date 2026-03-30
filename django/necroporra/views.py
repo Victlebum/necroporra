@@ -248,6 +248,13 @@ def index(request):
     return redirect('login')
 
 
+def landing_page_view(request):
+    """Render public landing page while keeping auth redirect behavior."""
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    return render(request, 'necroporra/landing.html')
+
+
 def _attempt_pool_join(pool, user):
     """Attempt to add a user to a pool and return status metadata."""
     if pool.is_locked:

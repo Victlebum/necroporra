@@ -1,0 +1,195 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Necroporra | Predict who's next</title>
+
+  <link rel="icon" type="image/png" href="{% static 'necroporra/img/favicon.png' %}">
+  <link rel="stylesheet" href="{% static 'necroporra/css/styles.css' %}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+
+  <style>
+    .landing-hero {
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 20% 18%, hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.14), transparent 46%),
+        radial-gradient(circle at 86% 80%, hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.08), transparent 52%),
+        var(--bulma-body-background-color);
+      color: var(--bulma-body-color);
+    }
+
+    .landing-hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image: linear-gradient(to bottom, hsla(0, 0%, 100%, 0.04) 1px, transparent 1px);
+      background-size: 100% 2.8rem;
+      opacity: 0.4;
+    }
+
+    .landing-wrap {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: grid;
+      align-items: center;
+      padding: clamp(2rem, 5vw, 4.5rem) 1.25rem;
+    }
+
+    .landing-panel {
+      max-width: 780px;
+      margin: 0 auto;
+      text-align: center;
+      animation: landing-rise 560ms ease-out both;
+    }
+
+    .landing-mark {
+      margin-bottom: 1.2rem;
+    }
+
+    .landing-mark .icon {
+      color: var(--bulma-text-strong);
+      font-size: clamp(2.4rem, 5vw, 3.8rem);
+      display: inline-block;
+      filter: drop-shadow(0 0 0.35rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.45));
+      text-shadow:
+        0 0 0.55rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.55),
+        0 0 1.15rem hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.4);
+      animation: skull-glow 2.8s ease-in-out infinite alternate;
+    }
+
+    .landing-kicker {
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      font-size: 0.76rem;
+      color: hsl(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l));
+      margin-bottom: 0.8rem;
+      font-weight: 700;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    }
+
+    .landing-title {
+      margin-bottom: 0.95rem;
+      line-height: 0.95;
+      font-size: clamp(2.9rem, 11vw, 6.8rem);
+      color: var(--bulma-text-strong);
+      letter-spacing: -0.02em;
+      text-wrap: balance;
+      font-family: "Lora", "Georgia", serif;
+      font-weight: 700;
+    }
+
+    .landing-subtitle {
+      margin: 0 auto;
+      max-width: 42ch;
+      font-size: clamp(1rem, 2.4vw, 1.25rem);
+      color: hsl(var(--bulma-text-h), var(--bulma-text-s), var(--bulma-text-l));
+      line-height: 1.6;
+      text-wrap: pretty;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    }
+
+    .landing-actions {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    .landing-actions .button {
+      min-width: 15rem;
+      min-height: 3rem;
+      border-radius: 999px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      padding-inline: 1.2rem;
+      font-family: "Source Sans 3", "Segoe UI", sans-serif;
+    }
+
+    .landing-actions .button.is-light {
+      background: transparent;
+      color: var(--bulma-text-strong);
+      border-color: hsla(var(--bulma-border-h), var(--bulma-border-s), var(--bulma-border-l), 0.9);
+    }
+
+    .landing-actions .button.is-light:hover,
+    .landing-actions .button.is-light:focus-visible {
+      background: hsla(var(--bulma-primary-h), var(--bulma-primary-s), 16%, 0.35);
+      color: var(--bulma-text-strong);
+      border-color: hsla(var(--bulma-primary-h), var(--bulma-primary-s), calc(var(--bulma-primary-l) + 12%), 0.7);
+    }
+
+    @keyframes landing-rise {
+      from {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes skull-glow {
+      from {
+        filter: drop-shadow(0 0 0.2rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.35));
+        text-shadow:
+          0 0 0.4rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.4),
+          0 0 0.9rem hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.3);
+      }
+      to {
+        filter: drop-shadow(0 0 0.45rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.65));
+        text-shadow:
+          0 0 0.85rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.7),
+          0 0 1.5rem hsla(var(--bulma-primary-h), var(--bulma-primary-s), var(--bulma-primary-l), 0.5);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .landing-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .landing-actions .button {
+        min-width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <section class="landing-hero" aria-labelledby="landing-title">
+    <div class="landing-wrap">
+      <div class="landing-panel">
+        <div class="landing-mark" aria-hidden="true">
+          <span class="icon">
+            <i class="fas fa-skull"></i>
+          </span>
+        </div>
+
+        <p class="landing-kicker">Predict who's next</p>
+        <h1 id="landing-title" class="landing-title">Necroporra</h1>
+        <p class="landing-subtitle">Create a dead pool with friends, choose your picks, and let the leaderboard settle the score.<br class="mb-3">You monster.</p>
+        <div class="landing-actions">
+          <a class="button is-danger is-medium" href="/register">Join Now</a>
+          <a class="button is-light is-medium is-outlined" href="/login">I already have an account</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+
+</html>
