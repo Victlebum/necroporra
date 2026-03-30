@@ -21563,102 +21563,102 @@ has-background-danger.is-hoverable:active {
 
 :root {
   --bulma-scheme-h: 0;
-  --bulma-scheme-s: 5%;
+  --bulma-scheme-s: 6%;
   --bulma-scheme-main-l: 4%;
   --bulma-scheme-main-bis-l: 6%;
   --bulma-scheme-main-ter-l: 8%;
   --bulma-scheme-invert-l: 95%;
   --bulma-text-h: 0;
-  --bulma-text-s: 12%;
-  --bulma-text-l: 70%;
-  --bulma-text-strong-l: 88%;
+  --bulma-text-s: 14%;
+  --bulma-text-l: 72%;
+  --bulma-text-strong-l: 89%;
   --bulma-text-weak-l: 50%;
-  --bulma-body-background-color: hsl(0, 5%, 4%);
-  --bulma-body-color: hsl(0, 8%, 70%);
+  --bulma-body-background-color: hsl(0, 6%, 4%);
+  --bulma-body-color: hsl(0, 10%, 72%);
   --bulma-body-size: 1rem;
-  --bulma-primary-h: 0;
+  --bulma-primary-h: 24;
   --bulma-primary-s: 100%;
-  --bulma-primary-l: 30%;
+  --bulma-primary-l: 42%;
   --bulma-primary-invert-l: 95%;
-  --bulma-primary-light-l: 12%;
-  --bulma-primary-dark-l: 20%;
+  --bulma-primary-light-l: 13%;
+  --bulma-primary-dark-l: 28%;
   --bulma-primary-soft-l: 18%;
-  --bulma-primary-bold-l: 45%;
-  --bulma-link-h: 0;
-  --bulma-link-s: 85%;
-  --bulma-link-l: 58%;
+  --bulma-primary-bold-l: 52%;
+  --bulma-link-h: 28;
+  --bulma-link-s: 96%;
+  --bulma-link-l: 55%;
   --bulma-link-invert-l: 95%;
-  --bulma-link-light-l: 15%;
-  --bulma-link-dark-l: 25%;
+  --bulma-link-light-l: 16%;
+  --bulma-link-dark-l: 30%;
   --bulma-link-soft-l: 20%;
-  --bulma-link-bold-l: 65%;
-  --bulma-info-h: 270;
-  --bulma-info-s: 100%;
-  --bulma-info-l: 55%;
+  --bulma-link-bold-l: 62%;
+  --bulma-info-h: 275;
+  --bulma-info-s: 72%;
+  --bulma-info-l: 58%;
   --bulma-info-invert-l: 95%;
-  --bulma-info-light-l: 15%;
-  --bulma-info-dark-l: 25%;
+  --bulma-info-light-l: 14%;
+  --bulma-info-dark-l: 28%;
   --bulma-info-soft-l: 18%;
-  --bulma-info-bold-l: 68%;
-  --bulma-success-h: 120;
-  --bulma-success-s: 45%;
-  --bulma-success-l: 38%;
+  --bulma-info-bold-l: 66%;
+  --bulma-success-h: 95;
+  --bulma-success-s: 42%;
+  --bulma-success-l: 40%;
   --bulma-success-invert-l: 95%;
-  --bulma-success-light-l: 12%;
-  --bulma-success-dark-l: 20%;
+  --bulma-success-light-l: 13%;
+  --bulma-success-dark-l: 24%;
   --bulma-success-soft-l: 15%;
-  --bulma-success-bold-l: 50%;
-  --bulma-warning-h: 45;
-  --bulma-warning-s: 90%;
-  --bulma-warning-l: 42%;
-  --bulma-warning-invert-l: 5%;
-  --bulma-warning-light-l: 12%;
-  --bulma-warning-dark-l: 22%;
+  --bulma-success-bold-l: 52%;
+  --bulma-warning-h: 39;
+  --bulma-warning-s: 96%;
+  --bulma-warning-l: 52%;
+  --bulma-warning-invert-l: 8%;
+  --bulma-warning-light-l: 14%;
+  --bulma-warning-dark-l: 30%;
   --bulma-warning-soft-l: 15%;
-  --bulma-warning-bold-l: 60%;
-  --bulma-danger-h: 0;
-  --bulma-danger-s: 100%;
-  --bulma-danger-l: 52%;
+  --bulma-warning-bold-l: 64%;
+  --bulma-danger-h: 356;
+  --bulma-danger-s: 85%;
+  --bulma-danger-l: 46%;
   --bulma-danger-invert-l: 95%;
-  --bulma-danger-light-l: 12%;
-  --bulma-danger-dark-l: 22%;
+  --bulma-danger-light-l: 13%;
+  --bulma-danger-dark-l: 26%;
   --bulma-danger-soft-l: 15%;
-  --bulma-danger-bold-l: 65%;
+  --bulma-danger-bold-l: 58%;
   --bulma-dark-h: 0;
-  --bulma-dark-s: 5%;
-  --bulma-dark-l: 10%;
-  --bulma-dark-invert-l: 85%;
+  --bulma-dark-s: 6%;
+  --bulma-dark-l: 9%;
+  --bulma-dark-invert-l: 86%;
   --bulma-dark-light-l: 6%;
   --bulma-dark-dark-l: 5%;
   --bulma-border-h: 0;
-  --bulma-border-s: 25%;
-  --bulma-border-l: 22%;
+  --bulma-border-s: 20%;
+  --bulma-border-l: 24%;
   --bulma-border-hover-l: 40%;
   --bulma-border-light-l: 15%;
   --bulma-shadow-l: 0%;
-  --bulma-navbar-background-color: hsl(0, 5%, 8%);
-  --bulma-navbar-item-color: hsl(0, 5%, 70%);
-  --bulma-navbar-item-hover-background-color: hsl(0, 100%, 16%);
-  --bulma-navbar-item-hover-color: hsl(0, 5%, 90%);
-  --bulma-footer-background-color: hsl(0, 18%, 3%);
-  --bulma-footer-color: hsl(0, 12%, 50%);
+  --bulma-navbar-background-color: hsl(0, 6%, 8%);
+  --bulma-navbar-item-color: hsl(0, 10%, 72%);
+  --bulma-navbar-item-hover-background-color: hsl(24, 100%, 18%);
+  --bulma-navbar-item-hover-color: hsl(0, 10%, 92%);
+  --bulma-footer-background-color: hsl(0, 10%, 3%);
+  --bulma-footer-color: hsl(0, 12%, 56%);
   --bulma-footer-padding: 2rem 1.5rem;
-  --bulma-input-background-color: hsl(0, 18%, 6%);
-  --bulma-input-border-color: hsl(0, 30%, 22%);
-  --bulma-input-color: hsl(0, 12%, 80%);
-  --bulma-input-placeholder-color: hsl(0, 12%, 40%);
-  --bulma-input-hover-border-color: hsl(0, 100%, 30%);
-  --bulma-input-focus-border-color: hsl(0, 100%, 40%);
+  --bulma-input-background-color: hsl(0, 10%, 6%);
+  --bulma-input-border-color: hsl(24, 38%, 24%);
+  --bulma-input-color: hsl(0, 14%, 82%);
+  --bulma-input-placeholder-color: hsl(0, 12%, 44%);
+  --bulma-input-hover-border-color: hsl(24, 96%, 42%);
+  --bulma-input-focus-border-color: hsl(24, 100%, 48%);
   --bulma-input-focus-shadow-size: 0 0 0 0.125em;
-  --bulma-input-focus-shadow-color: hsla(0, 100%, 30%, 0.35);
+  --bulma-input-focus-shadow-color: hsla(24, 100%, 46%, 0.35);
 }
 
 .title {
-  color: hsl(0, 16%, 88%);
+  color: hsl(0, 16%, 89%);
 }
 
 .subtitle {
-  color: hsl(0, 12%, 64%);
+  color: hsl(0, 12%, 66%);
 }
 
 .celebrity-card {
@@ -21691,7 +21691,7 @@ has-background-danger.is-hoverable:active {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #1a0000 0%, #660000 50%, #330000 100%);
+  background: linear-gradient(135deg, hsl(var(--bulma-primary-h), var(--bulma-primary-s), 16%) 0%, hsl(var(--bulma-primary-h), var(--bulma-primary-s), 30%) 50%, hsl(var(--bulma-primary-h), var(--bulma-primary-s), 18%) 100%);
   color: hsl(0, 12%, 70%);
   font-size: 3rem;
   font-weight: bold;
@@ -21779,28 +21779,7 @@ has-background-danger.is-hoverable:active {
   background: hsla(var(--bulma-success-h), var(--bulma-success-s), calc(var(--bulma-success-l) + 10%), 0.35);
 }
 
-.brand-home-link {
-  cursor: pointer;
-  gap: 0.35rem;
-}
-.brand-home-link strong {
-  transition: text-decoration-color 0.2s ease;
-}
-.brand-home-link .tag {
-  font-size: 0.7rem;
-  letter-spacing: 0.02em;
-}
-.brand-home-link:hover strong, .brand-home-link:focus-visible strong {
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.2em;
-  text-decoration-color: hsla(var(--bulma-link-h), var(--bulma-link-s), var(--bulma-link-l), 0.9);
-}
-
 @media screen and (max-width: 768px) {
-  .brand-home-link .tag {
-    display: none;
-  }
   .pool-invite-copy-tag {
     min-width: 0;
     width: 100%;
