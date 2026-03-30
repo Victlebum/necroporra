@@ -80,7 +80,7 @@
                 <th style="width: 50px;">#</th>
                 <th>Player</th>
                 <th style="width: 120px;">{% if pool.scoring_mode == 'distributed' %}Points{% else %}Score{% endif %}</th>
-                <th style="width: 150px;">Picks</th>
+                <th style="width: 150px;">Predictions</th>
               </tr>
             </thead>
             <tbody>
@@ -117,7 +117,7 @@
                       <span class="icon has-text-grey-light">
                         <i class="fas fa-spinner fa-pulse"></i>
                       </span>
-                      <span class="is-size-7 has-text-grey-light">Loading picks...</span>
+                      <span class="is-size-7 has-text-grey-light">Loading predictions...</span>
                     </div>
                   </div>
                 </td>
@@ -366,7 +366,7 @@
       return {
         correctCount: 0,
         totalCount: 0,
-        html: `<span class="has-text-grey is-size-7">No picks yet</span>`
+        html: `<span class="has-text-grey is-size-7">No predictions yet</span>`
       };
     }
     
@@ -401,11 +401,15 @@
       const birthYear = celebrity.birth_date ? new Date(celebrity.birth_date).getFullYear() : '';
       const deathYear = celebrity.death_date ? new Date(celebrity.death_date).getFullYear() : '';
       const dates = birthYear ? (deathYear ? `${birthYear}-${deathYear}` : `born ${birthYear}`) : '';
+      const weightTag = POOL_SCORING_MODE === 'distributed' && pred.weight != null
+        ? `<span class="tag is-warning is-light ml-1">Bet: ${pred.weight}</span>`
+        : '';
       
       html += `
         <tr>
           <td style="border: none; padding: 0.25rem 0.5rem;">
             <strong>${celebrity.name}</strong>
+            ${weightTag}
             ${dates ? `<span class="has-text-grey is-size-7 ml-2">${dates}</span>` : ''}
           </td>
           <td style="border: none; padding: 0.25rem 0.5rem; text-align: right; white-space: nowrap;">
