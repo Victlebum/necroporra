@@ -634,6 +634,49 @@ class ViewsTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn('Invite-link sharing settings are disabled', response.json()['detail'])
 
+    def test_toggle_pool_visibility_requires_pool_admin(self):
+        """Only pool admins should be able to toggle pool visibility."""
+        member = User.objects.create_user(username='member3', password='testpass123')
+        PoolMembership.objects.create(pool=self.pool, user=member)
+        self.client.login(username='member3', password='testpass123')
+
+        response = self.client.post(reverse('api_toggle_pool_visibility', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_toggle_pool_visibility_flips_public_private_state(self):
+        """Admin toggling should flip pool public/private state."""
+        self.client.login(username='testuser', password='testpass123')
+
+        self.pool.is_public = True
+        self.pool.save(update_fields=['is_public'])
+
+        first_response = self.client.post(reverse('api_toggle_pool_visibility', args=[self.pool.slug]))
+        self.assertEqual(first_response.status_code, 200)
+        self.pool.refresh_from_db()
+        self.assertFalse(self.pool.is_public)
+        self.assertFalse(first_response.json()['is_public'])
+
+        second_response = self.client.post(reverse('api_toggle_pool_visibility', args=[self.pool.slug]))
+        self.assertEqual(second_response.status_code, 200)
+        self.pool.refresh_from_db()
+        self.assertTrue(self.pool.is_public)
+        self.assertTrue(second_response.json()['is_public'])
+
+    def test_toggle_pool_visibility_allowed_for_locked_pool(self):
+        """Pool visibility toggle should remain available for locked pools."""
+        self.pool.is_locked = True
+        self.pool.lock_date = timezone.now()
+        self.pool.is_public = True
+        self.pool.save(update_fields=['is_locked', 'lock_date', 'is_public'])
+
+        self.client.login(username='testuser', password='testpass123')
+        response = self.client.post(reverse('api_toggle_pool_visibility', args=[self.pool.slug]))
+        self.assertEqual(response.status_code, 200)
+
+        self.pool.refresh_from_db()
+        self.assertFalse(self.pool.is_public)
+        self.assertFalse(response.json()['is_public'])
+
     def test_api_join_pool_get_still_returns_405(self):
         """API join route should remain POST-only for AJAX callers."""
         self.client.login(username='testuser', password='testpass123')

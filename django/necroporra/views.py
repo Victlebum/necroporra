@@ -911,6 +911,25 @@ def toggle_member_invite_links_api(request, slug):
     })
 
 
+@require_http_methods(["POST"])
+@login_required
+def toggle_pool_visibility_api(request, slug):
+    """Toggle whether a pool is public or private (admin only)."""
+    pool = get_object_or_404(Pool, slug=slug)
+
+    if request.user != pool.admin:
+        return JsonResponse({'detail': 'You are not the admin of this pool.'}, status=403)
+
+    pool.is_public = not pool.is_public
+    pool.save(update_fields=['is_public'])
+
+    visibility_label = 'public' if pool.is_public else 'private'
+    return JsonResponse({
+        'detail': f'Pool visibility updated. This pool is now {visibility_label}.',
+        'is_public': pool.is_public,
+    })
+
+
 # ========== User Settings ==========
 
 

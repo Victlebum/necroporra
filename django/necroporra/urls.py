@@ -39,6 +39,7 @@ urlpatterns = [
     path('api/pools/<str:slug>/lock-now/', views.lock_pool_api, name='api_lock_pool'),
     path('api/pools/<str:slug>/regenerate-invite/', views.regenerate_invitation_api, name='api_regenerate_invite'),
     path('api/pools/<str:slug>/toggle-member-invite-links/', views.toggle_member_invite_links_api, name='api_toggle_member_invite_links'),
+    path('api/pools/<str:slug>/toggle-visibility/', views.toggle_pool_visibility_api, name='api_toggle_pool_visibility'),
     path('api/pools/<str:slug>/mark-dead/', views.mark_celebrity_dead_api, name='api_mark_dead'),
 
     # User settings API

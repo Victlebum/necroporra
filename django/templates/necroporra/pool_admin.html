@@ -42,55 +42,53 @@
           <span>Pool Status</span>
         </span>
       </h2>
-      <div class="columns is-multiline">
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Status</span>
-            {% if pool.is_pool_active %}
-              <span class="tag is-success">Active</span>
-            {% else %}
-              <span class="tag is-danger">Ended</span>
-            {% endif %}
-          </div>
-        </div>
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Visibility</span>
-            {% if pool.is_public %}
-              <span class="tag is-info">Public</span>
-            {% else %}
-              <span class="tag is-warning">Private</span>
-            {% endif %}
-          </div>
-        </div>
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Pool</span>
-            {% if pool.is_locked %}
-              <span class="tag is-danger">Closed</span>
-            {% else %}
-              <span class="tag is-success">Open</span>
-            {% endif %}
-          </div>
-        </div>
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Scoring</span>
-            <span class="tag is-white">{{ pool.get_scoring_mode_display }}</span>
-          </div>
-        </div>
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Ends</span>
-            <span class="tag is-white">{{ pool.limit_date|date:"d M Y" }}</span>
-          </div>
-        </div>
-        <div class="column is-narrow">
-          <div class="tags has-addons">
-            <span class="tag is-dark">Members</span>
-            <span class="tag is-white">{{ memberships.count }}/20</span>
-          </div>
-        </div>
+      <div class="table-container">
+        <table class="table is-fullwidth is-striped is-hoverable">
+          <tbody>
+            <tr>
+              <th scope="row">Status</th>
+              <td>
+                {% if pool.is_pool_active %}
+                  <span class="tag is-success">Active</span>
+                {% else %}
+                  <span class="tag is-danger">Ended</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Visibility</th>
+              <td>
+                {% if pool.is_public %}
+                  <span class="tag is-info">Public</span>
+                {% else %}
+                  <span class="tag is-warning">Private</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Pool</th>
+              <td>
+                {% if pool.is_locked %}
+                  <span class="tag is-danger">Closed</span>
+                {% else %}
+                  <span class="tag is-success">Open</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <th scope="row">Scoring</th>
+              <td>{{ pool.get_scoring_mode_display }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Ends</th>
+              <td>{{ pool.limit_date|date:"d M Y" }}</td>
+            </tr>
+            <tr>
+              <th scope="row">Members</th>
+              <td>{{ memberships.count }}/20</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <hr class="my-4">
@@ -163,7 +161,7 @@
 
       {% if not pool.is_public %}
       <hr class="my-4">
-      <div class="level is-mobile mb-3">
+      <div class="level mb-3">
         <div class="level-left">
           <div class="level-item">
             <div>
@@ -193,6 +191,31 @@
       </button>
       {% endif %}
       {% endif %}
+    </div>
+
+    <div class="box mb-5">
+      <div class="columns is-vcentered mb-3">
+        <div class="column is-three-quarters">
+          <p class="has-text-weight-semibold">Pool Visibility</p>
+          <p class="is-size-7 has-text-grey">Public pools can simply be seen by anyone, while private pools can only be accessed by the pool's members.</p>
+        </div>
+        <div class="column is-one-quarter has-text-right-desktop">
+          <span
+            id="poolVisibilityBadge"
+            class="tag is-medium {% if pool.is_public %}is-info{% else %}is-warning{% endif %}"
+          >{% if pool.is_public %}Public{% else %}Private{% endif %}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="button {% if pool.is_public %}is-warning{% else %}is-info{% endif %}"
+        id="btn-toggle-pool-visibility"
+        onclick="confirmTogglePoolVisibility()"
+      >
+        <span class="icon"><i class="fas fa-globe"></i></span>
+        <span id="poolVisibilityActionLabel">{% if pool.is_public %}Make Private{% else %}Make Public{% endif %}</span>
+      </button>
     </div>
 
     {# Members #}
@@ -577,6 +600,55 @@ async function toggleMemberInviteLinks() {
   } finally {
     if (button) button.classList.remove('is-loading');
   }
+}
+
+async function togglePoolVisibility() {
+  const button = document.getElementById('btn-toggle-pool-visibility');
+  const stateBadge = document.getElementById('poolVisibilityBadge');
+  const actionLabel = document.getElementById('poolVisibilityActionLabel');
+  if (button) button.classList.add('is-loading');
+
+  try {
+    const data = await fetchWithCsrf(`/api/pools/${SLUG}/toggle-visibility/`, {
+      method: 'POST',
+    });
+
+    if (stateBadge) {
+      stateBadge.textContent = data.is_public ? 'Public' : 'Private';
+      stateBadge.classList.remove('is-info', 'is-warning');
+      stateBadge.classList.add(data.is_public ? 'is-info' : 'is-warning');
+    }
+
+    if (actionLabel) {
+      actionLabel.textContent = data.is_public ? 'Make Private' : 'Make Public';
+    }
+
+    if (button) {
+      button.classList.remove('is-info', 'is-warning');
+      button.classList.add(data.is_public ? 'is-warning' : 'is-info');
+    }
+
+    showNotification(data.detail, 'success');
+    // Keep related visibility-dependent UI sections consistent.
+    setTimeout(() => window.location.reload(), 700);
+  } catch (e) {
+    showNotification(e.message || 'Network error. Please try again.', 'danger');
+  } finally {
+    if (button) button.classList.remove('is-loading');
+  }
+}
+
+function confirmTogglePoolVisibility() {
+  const stateBadge = document.getElementById('poolVisibilityBadge');
+  const isPublic = stateBadge?.textContent?.trim() === 'Public';
+  const nextVisibility = isPublic ? 'private' : 'public';
+
+  openModal(
+    'Change Pool Visibility',
+    `Switch this pool to ${nextVisibility}? Public pools can simply be seen by anyone, while private pools can only be accessed by the pool's members.`,
+    togglePoolVisibility,
+    'is-warning'
+  );
 }
 
 // ── Remove member ──────────────────────────────────────────────
