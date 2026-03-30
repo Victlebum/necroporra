@@ -134,4 +134,7 @@ function initNumberSteppers() {
   });
 }
 
+window.initNumberStepper = initNumberStepper;
+window.initNumberSteppers = initNumberSteppers;
+
 document.addEventListener('DOMContentLoaded', initNumberSteppers);

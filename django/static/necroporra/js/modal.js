@@ -71,9 +71,45 @@ function showConfirmModal(celebrity) {
             <div class="field mt-4">
                 <label class="label">Bet (1\u2013${maxWeight})</label>
                 <div class="control">
-                    <input class="input" type="number" id="predictionWeight" 
-                           value="1" min="1" max="${maxWeight}" 
-                           placeholder="Bet (1\u2013${maxWeight})">
+                    <div class="field has-addons number-stepper js-number-stepper">
+                        <p class="control">
+                            <button
+                                type="button"
+                                class="button number-stepper__button number-stepper__button--decrement js-number-stepper-button"
+                                data-stepper-action="decrement"
+                                aria-label="Decrease bet"
+                            >
+                                <span class="icon is-small" aria-hidden="true">
+                                    <i class="fas fa-minus"></i>
+                                </span>
+                            </button>
+                        </p>
+                        <p class="control number-stepper__value-control">
+                            <input
+                                class="input number-stepper__input js-number-stepper-input"
+                                type="number"
+                                id="predictionWeight"
+                                value="1"
+                                min="1"
+                                max="${maxWeight}"
+                                step="1"
+                                inputmode="numeric"
+                                placeholder="Bet (1\u2013${maxWeight})"
+                            >
+                        </p>
+                        <p class="control">
+                            <button
+                                type="button"
+                                class="button number-stepper__button number-stepper__button--increment js-number-stepper-button"
+                                data-stepper-action="increment"
+                                aria-label="Increase bet"
+                            >
+                                <span class="icon is-small" aria-hidden="true">
+                                    <i class="fas fa-plus"></i>
+                                </span>
+                            </button>
+                        </p>
+                    </div>
                 </div>
                 <p class="help">
                     <strong>Remaining bet budget:</strong> ${maxWeight} / 10<br>
@@ -98,6 +134,13 @@ function showConfirmModal(celebrity) {
             </div>
         </div>
     `;
+
+    if (POOL_SCORING_MODE === 'distributed') {
+        const modalStepper = modalContent.querySelector('.js-number-stepper');
+        if (modalStepper && typeof window.initNumberStepper === 'function') {
+            window.initNumberStepper(modalStepper);
+        }
+    }
     
     modal.classList.add('is-active');
     document.documentElement.classList.add('is-clipped');
