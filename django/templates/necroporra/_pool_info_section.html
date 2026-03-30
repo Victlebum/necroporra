@@ -4,10 +4,20 @@
     <div class="column is-half-mobile is-6-tablet is-3-desktop">
       <div class="pool-meta-card">
         <span class="icon pool-meta-card-icon" aria-hidden="true">
-          <i class="fas fa-users"></i>
+          {% if pool.scoring_mode == 'distributed' %}
+            <i class="fas fa-chart-pie"></i>
+          {% else %}
+            <i class="fas fa-bullseye"></i>
+          {% endif %}
         </span>
-        <p class="pool-meta-card-label">Members</p>
-        <p class="pool-meta-card-value">{{ stats.member_count }}/20</p>
+        <p class="pool-meta-card-label">Scoring Mode</p>
+        <p class="pool-meta-card-value">
+          {% if pool.scoring_mode == 'distributed' %}
+            Distributed
+          {% else %}
+            Simple
+          {% endif %}
+        </p>
       </div>
     </div>
 
