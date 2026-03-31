@@ -22235,5 +22235,17 @@ main {
     margin-right: auto;
   }
 }
+@media screen and (max-width: 768px) {
+  .table-responsive-mobile {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    display: block;
+  }
+  .table-responsive-mobile table {
+    min-width: 600px;
+    width: max-content;
+  }
+}
 
 /*# sourceMappingURL=styles.css.map */
