@@ -43,7 +43,7 @@
       z-index: 1;
       min-height: 100vh;
       display: grid;
-      align-items: center;
+      place-items: center;
       padding: clamp(2rem, 5vw, 4.5rem) 1.25rem;
     }
 
@@ -56,12 +56,14 @@
 
     .landing-mark {
       margin-bottom: 1.2rem;
+      display: flex;
+      justify-content: center;
     }
 
     .landing-mark .icon {
       color: var(--bulma-text-strong);
       font-size: clamp(2.4rem, 5vw, 3.8rem);
-      display: inline-block;
+      display: inline-flex;
       filter: drop-shadow(0 0 0.35rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.45));
       text-shadow:
         0 0 0.55rem hsla(var(--bulma-danger-h), var(--bulma-danger-s), var(--bulma-danger-l), 0.55),
@@ -80,7 +82,7 @@
     }
 
     .landing-title {
-      margin-bottom: 0.95rem;
+      margin-bottom: 1.2rem;
       line-height: 0.95;
       font-size: clamp(2.9rem, 11vw, 6.8rem);
       color: var(--bulma-text-strong);
