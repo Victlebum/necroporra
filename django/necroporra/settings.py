@@ -10,7 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import dj_database_url
+import os
 from pathlib import Path
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,12 +24,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-qisc$!ze2@u7zg8s_$=0lfx8mni!y8tey_cgp*-pvh=sxy5!px'
+env_path = BASE_DIR.parent / '.env'
+load_dotenv(dotenv_path=env_path)
+
+def get_env_variable(var_name):
+    try:
+        return os.environ[var_name]
+    except KeyError:
+        # App crashes immediately on startup if key is missing
+        raise ImproperlyConfigured(f"FATAL: {var_name} is not set in {env_path}")
+
+SECRET_KEY = get_env_variable('SECRET_KEY')
+
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = get_env_variable('DEBUG') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [host.strip() for host in get_env_variable('ALLOWED_HOSTS').split(',')]
 
 # Internal IPs for debug context processor
 INTERNAL_IPS = [
@@ -81,10 +96,12 @@ WSGI_APPLICATION = 'necroporra.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        # This automatically pulls the DATABASE_URL from your .env file
+        default=get_env_variable('DATABASE_URL'),
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
 }
 
 
