@@ -8,7 +8,7 @@
 //   Crypt Stone   hsl(0, 6%, 7%)    #131111  — card surfaces
 //   Eldritch Plum hsl(292, 64%, 44%) #A428B8  — primary / CTAs
 //   Harvest Flame hsl(28, 96%, 55%) #FB8520  — links
-//   Crimson Bloom hsl(350, 76%, 36%) #A1172C — danger
+//   Blood Red     hsl(356, 85%, 46%)#D91323  — danger
 //   Grave Moss    hsl(95, 42%, 40%) #5E913B  — success
 //   Candle Amber  hsl(39, 96%, 52%) #FBAE0E  — warning
 //   Witch Violet  hsl(275, 72%, 58%)#9D46E1  — info
@@ -88,9 +88,9 @@
   --bulma-warning-bold-l: 64%;
 
   // ── Danger — Blood Red ──────────────────────────────────
-  --bulma-danger-h: 350;
-  --bulma-danger-s: 76%;
-  --bulma-danger-l: 36%;             // deeper crimson, less neon on dark UI
+  --bulma-danger-h: 356;
+  --bulma-danger-s: 85%;
+  --bulma-danger-l: 46%;             // vivid but less neon than pure red
   --bulma-danger-invert-l: 95%;
   --bulma-danger-light-l: 13%;
   --bulma-danger-dark-l: 26%;
@@ -674,6 +674,10 @@ main {
 }
 
 @media screen and (max-width: 768px) {
+  .create-pool-inline-stepper-field {
+    margin-bottom: 1.5rem !important;
+  }
+
   .number-stepper {
     max-width: 11rem;
   }
@@ -693,7 +697,12 @@ main {
     align-items: center;
     justify-content: center;
     text-align: center;
-    gap: 0.5rem;
+    gap: 0.25rem;
+
+    // Remove Bulma field margin from embedded stepper
+    .field:not(:last-child) {
+      margin-bottom: 0;
+    }
   }
 
   .create-pool-inline-stepper .number-stepper {
