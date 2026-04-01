@@ -24,7 +24,7 @@
     <div class="column is-half-mobile is-6-tablet is-3-desktop">
       <div class="pool-meta-card {% if pool.is_locked %}is-danger{% else %}is-success{% endif %}">
         <span class="icon pool-meta-card-icon" aria-hidden="true">
-          <i class="fas fa-signal"></i>
+          <i class="fas fa-{% if pool.is_locked %}lock{% else %}unlock{% endif %}"></i>
         </span>
         <p class="pool-meta-card-label">Lock Status</p>
         <p class="pool-meta-card-value">{% if pool.is_locked %}Closed{% else %}Open{% endif %}</p>
